@@ -1,0 +1,14 @@
+#!/bin/bash
+if [ $# -ne 1 ]; then
+	echo "usage: createScript FILE"
+fi
+
+#What to write into the file
+ADD_TO_FILE="#!/bin/bash
+
+"
+
+FILE=$1
+printf "$ADD_TO_FILE" >> $FILE
+chmod 775 $FILE
+vim $FILE

@@ -1,0 +1,54 @@
+#!/bin/bash
+
+usage() {
+cat << EOF
+Usage: convertAll FROM_TYPE TO_TYPE [options]
+Example convertAll nef jpg
+
+Options:
+	--replace
+		Replaces existing files.
+EOF
+}
+
+if [ $# -lt 2 ]; then
+	echo usage: convertAll from_type to_type
+	echo example: convertAll nef jpg
+	exit
+fi
+
+FROM=$1
+TO=$2
+REPLACE=0
+
+shift 2
+
+while [ -n "$*" ]; do
+	case $1 in
+	-h)
+		usage
+		exit 1
+		;;
+	--help)
+		usage
+		exit 1
+		;;
+	--replace)
+		REPLACE=1
+		;;
+	esac
+
+	shift
+done
+
+for picture in *.$FROM; do
+	new_picture="${picture%.*}.$TO"
+
+	# Skip file if it exists and we don't want to replace it
+	if [[ -e $new_picture && $REPLACE == 0 ]]; then
+		echo "Skipping picture $picture, it already exists."
+	else
+		echo "converting picture $picture ---> $new_picture"
+		convert "$picture" "$new_picture"
+	fi
+done

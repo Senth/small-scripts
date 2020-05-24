@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# Checks whether pdvorak already exists or not
+PDVORAK_EXISTS=`cat /usr/share/X11/xkb/symbols/us | grep -c pdvorak`
+
+if [ $PDVORAK_EXISTS -eq 1 ]; then
+	echo "Already patched, skipping..."
+	exit
+fi
+
+
+echo "Patching..."
+sudo patch /usr/share/X11/xkb/symbols/us < /home/senth/Dropbox/configs/keyboard/linux/us.patch
+sudo patch /usr/share/X11/xkb/symbols/level3 < /home/senth/Dropbox/configs/keyboard/linux/level3.patch
+sudo patch /usr/share/X11/xkb/rules/base.lst < /home/senth/Dropbox/configs/keyboard/linux/base.lst.patch
+sudo patch /usr/share/X11/xkb/rules/base.xml < /home/senth/Dropbox/configs/keyboard/linux/base.xml.patch
+sudo patch /usr/share/X11/xkb/rules/evdev.lst < /home/senth/Dropbox/configs/keyboard/linux/base.lst.patch
+sudo patch /usr/share/X11/xkb/rules/evdev.xml < /home/senth/Dropbox/configs/keyboard/linux/base.xml.patch
+echo "Pdvorak patched!"

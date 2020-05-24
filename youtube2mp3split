@@ -1,0 +1,31 @@
+#!/usr/bin/python
+
+import argparse
+from subprocess import call
+from contextlib import suppress
+from os import remove
+
+parser = argparse.ArgumentParser(description='Download a YouTube video and split it into several mp3s')
+parser.add_argument('url', help='YouTube url')
+parser.add_argument('file_prefix', help='MP3 file prefix for output files')
+parser.add_argument('length', type=int, help='Length of the mp3 files in seconds')
+parser.add_argument('--save-full', action='store_true', dest='save_full', help='Will save the full mp3 file')
+
+args = parser.parse_args()
+
+# Download Youtube movie
+print('Downloading YouTube movie and converting it to mp3')
+
+TEMP_MP3 = 'TEMP_YOUTUBE_MP3.mp3'
+
+if args.save_full:
+    TEMP_MP3 = args.file_prefix + '.mp3'
+
+call(['youtube2mp3', args.url, TEMP_MP3])
+
+# Split mp3 into several pieces
+call(['ffmpeg', '-i', TEMP_MP3, '-f', 'segment', '-segment_time', str(args.length), '-c', 'copy', args.file_prefix + '-%03d.mp3'])
+
+if not args.save_full:
+    suppress(FileNotFoundError)
+    remove(TEMP_MP3)

@@ -1,0 +1,49 @@
+#!/bin/bash
+
+usage() {
+cat << EOF
+Usage: $0 files
+
+Options:
+	-h, --help
+		Displays this text
+EOF
+}
+
+if [ $# -lt 0 ]; then
+	usage
+	exit
+fi
+
+files=()
+# Parse the arguments
+while [ -n "$*" ]; do
+	case $1 in
+	-h)
+		usage
+		exit 1
+		;;
+	--help)
+		usage
+		exit 1
+		;;
+	*)
+		files+=("$1")
+		;;
+	esac
+
+	shift
+done
+
+# Program
+for file in "${files[@]}"; do
+# 	basename=$(basename "$file")
+	filename="${file%.*}"
+	in="audiodump.wav"
+	out="${filename}.wav"
+
+
+	echo "Extracting Wave from $file"
+	mplayer "$file" -vo null -vc null -ao pcm:fast >> /dev/null
+	mv "$in" "$out"
+done

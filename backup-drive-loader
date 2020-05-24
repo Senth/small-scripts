@@ -1,0 +1,27 @@
+#!/bin/bash
+
+DRIVE_DEFAULT=/dev/sde1
+KEY_FILE=/home/senth/ownCloud/configs/backup.key
+
+if [ $# = 0 ]; then
+	echo "Usage: $0 [mount|umount] [drive]"
+elif [ "$1" = "mount" ]; then
+	echo "Mounting backup"
+
+	if [ $# -ge 2 ]; then
+		drive="$2"
+	else
+		drive="$DRIVE_DEFAULT"
+	fi
+
+	echo Using drive: $drive
+	sudo cryptsetup luksOpen -d "$KEY_FILE" "$drive" backup
+	sudo mount /mnt/backup
+elif [ "$1" = "umount" ]; then
+	echo "Unmounting backup"
+
+	sudo umount /mnt/backup
+	sudo cryptsetup luksClose /dev/mapper/backup
+else
+	echo "Usage: $0 [mount|umount]"
+fi

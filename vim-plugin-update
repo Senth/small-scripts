@@ -1,0 +1,6 @@
+#!/bin/bash
+
+for d in ~/.vim/bundle/*; do
+	basename $d
+	cd $d && git pull
+done

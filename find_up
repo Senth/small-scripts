@@ -1,0 +1,32 @@
+#!/bin/bash
+
+# TODO write usage
+usage() {
+cat << EOF
+Usage: find_up expression_to_find [from_folder]
+
+Options:
+	-h, --help
+		Displays this text
+EOF
+}
+
+if [ $# -lt 1 ]; then
+	usage
+	exit
+fi
+
+# TODO save the arguments
+TO_FIND="$1"
+
+if [ ! -z "$2" ]; then
+	PARENT_PATH="$2"
+else
+	PARENT_PATH="$PWD"
+fi
+
+# TODO write the program
+while [[ "$PARENT_PATH" != "" && ! -e "$PARENT_PATH/$TO_FIND" ]]; do
+	PARENT_PATH=${PARENT_PATH%/*}
+done
+echo "$PARENT_PATH"

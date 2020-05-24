@@ -1,0 +1,42 @@
+#!/usr/bin/python
+
+import argparse
+from subprocess import Popen
+
+parser = argparse.ArgumentParser(description='Create Android icons of an existing image')
+parser.add_argument('inImage', help='The image to convert to Android icons')
+parser.add_argument('outPrefix', help='Prefix of output files')
+parser.add_argument('use', help='Which type (resolution) to export to. ', choices=['launcher', 'notification', '18dp', '24dp', '36dp', '48dp'])
+
+args = parser.parse_args()
+
+RES_NAME = ['mdpi', 'hdpi', 'xhdpi', 'xxhdpi', 'xxxhdpi', 'Google-Play-store']
+RES_MULTIPLIER = [1, 1.5, 2, 3, 4]
+
+resolutions = []
+if args.use == 'launcher':
+    resBase = 48
+elif args.use == 'notification':
+    resBase = 22
+elif args.use == '18dp':
+    resBase = 18
+elif args.use == '24dp':
+    resBase = 24
+elif args.use == '36dp':
+    resBase = 36
+elif args.use == '48dp':
+    resBase = 48
+else:
+    print(args.use + ' is not a valid type')
+
+for multiplier in RES_MULTIPLIER:
+    resolutions.append(multiplier*resBase)
+
+# Append launcher icon last
+if args.use == 'launcher':
+    resolutions.append(512)
+
+for i, res in enumerate(resolutions):
+    resName = RES_NAME[i]
+    outFile = args.outPrefix + '-' + resName + '.png'
+    Popen(['inkscape', '-e', outFile, '-w', str(res), '-h', str(res), '--export-background-opacity=0', '--without-gui', args.inImage])

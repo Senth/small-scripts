@@ -1,0 +1,77 @@
+#!/bin/bash
+
+source ~/.zshrc_computer_specific
+
+MAKEOPTS="-j$((CORES+1))"
+
+# Check for root
+if [ $UID -ne 0 ]; then
+	echo "Must be root to run script!"
+	exit 1;
+fi
+
+# Check for proper computer
+if [ "$COMPUTER" != "mina" ] && [ "$COMPUTER" != "neritha" ]; then
+	echo $COMPUTER
+	echo "Cannot run makekernel on this computer!";
+	exit 1;
+fi
+
+
+function mount_boot() {
+	if [ "$COMPUTER" = "mina" ]; then
+		if [ ! -d "/boot/efi/EFI" ]; then
+			mount /boot/efi
+		fi
+	elif [ "$COMPUTER" = "neritha" ]; then
+		if [ ! -d "/boot/grub" ]; then
+			mount /boot
+		fi
+	fi
+}
+
+function check_for_grub() {
+	if [ ! -d "/boot/grub" ]; then
+		"Grub not installed!"
+		exit
+	fi
+}
+
+# make kernel and nvidia-drivers
+function make_kernel_and_graphics() {
+	if [ "$COMPUTER" = "mina" ]; then
+		make $MAKEOPTS && make modules_install && make install && emerge ati-drivers
+	elif [ "$COMPUTER" = "neritha" ]; then
+# 		make $MAKEOPTS && make modules_install && make install && emerge nvidia-drivers && ln -s opengl/xorg-x11/lib/libGL.la /usr/lib64/libGL.la
+		make $MAKEOPTS && make modules_install && make install
+	fi
+}
+
+# Update grub config
+function update_grub_conf_neritha() {
+	grub-mkconfig -o /boot/grub/grub.cfg
+}
+
+# Update efi
+function update_grub_conf_efi() {
+	cd "$PWD_OLD"
+	grub-install --target=x86_64-efi /dev/sda
+	grub-mkconfig -o /boot/grub/grub.cfg
+}
+
+
+#################
+# PROGRAM LOGIC #
+#################
+PWD_OLD=$PWD
+
+mount_boot
+check_for_grub
+make_kernel_and_graphics
+if [ "$COMPUTER" = "neritha" ]; then
+	update_grub_conf_neritha
+elif [ "$COMPUTER" = "mina" ]; then
+	update_grub_conf_efi
+fi
+
+cd $PWD_OLD

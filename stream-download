@@ -1,0 +1,189 @@
+#!/usr/bin/python3
+
+import argparse
+import os
+import re
+from subprocess import run
+
+parser = argparse.ArgumentParser(description='Download video streams')
+parser.add_argument('-v', '--video_url',
+                    help='Video url (one of the segments)')
+parser.add_argument('-a', '--audio_url',
+                    help='Audio url (one of the segments)')
+parser.add_argument('-p', '--parts', type=int, help='Number of total parts')
+parser.add_argument('-o', '--out_file', help='Output file')
+parser.add_argument('-i', '--input_file',
+                    help='Parse a file and download all streams from it')
+parser.add_argument('--video-container', default='mp4',
+                    help='Video container for downloaded parts (default: mp4)')
+parser.add_argument('--audio-container', default='mp4',
+                    help='Audio container for downloaded parts (default: mp4)')
+parser.add_argument('--stutter-correction', action='store_true',
+                    help='Use this if flag if the video appears to stutter')
+
+
+def check_required_arguments(args, is_input_file, line_number=0):
+    """Check so all required fields are set. We need either -i or all these: -v, -a, -p, -o, -i"""
+    if not args.input_file or is_input_file:
+        error_message = ''
+        if not args.video_url:
+            error_message += "Missing --video_url argument\n"
+        if not args.audio_url:
+            error_message += "Missing --audio_url argument\n"
+        if not args.parts:
+            error_message += "Missing --parts argument\n"
+        if not args.out_file:
+            error_message += "Missing --out_file argument\n"
+
+        if len(error_message) > 0:
+            if is_input_file:
+                error_message += "These arguments need to be set on line number {} \n".format(
+                    line_number)
+            else:
+                error_message += "If you're not using a file input (-i) these arguments need to be set:\n"
+            error_message += "--video_url, --audio_url, --parts, --out_file"
+            parser.error(error_message)
+
+
+def create_parts_links_file(url, type, out_file, parts):
+    if type != 'audio' and type != 'video':
+        raise RuntimeError('type needs to be audio or video')
+
+    parts_filename = out_file + '-' + type + '-parts.txt'
+    parts_file = open(parts_filename, 'w')
+
+    for i in range(0, parts):
+        url_part = re.sub(r'^(.*)-\d*(\.m4s)', r'\1-{}\2'.format(i), url)
+        parts_file.write(url_part + '\n')
+
+    parts_file.close()
+
+    return parts_filename
+
+
+def download_parts(parts_filename, type, out_file, container):
+    if type != 'audio' and type != 'video':
+        raise RuntimeError('type needs to be audio or video')
+
+    type_filename = out_file + '-' + type + '.' + container
+    run(['wget', '-i', parts_filename, '-O', type_filename])
+    return type_filename
+
+
+def merge_video_audio(video_filename, audio_filename, out_file, stutter_correction):
+    # Merge video & audio
+    merge_list = ['ffmpeg', '-i', video_filename,
+                  '-i', audio_filename, '-c', 'copy']
+
+    # Stutter correction
+    if stutter_correction:
+        merge_list += ['-fflags', '+igndts']
+
+    merge_list.append(out_file)
+
+    run(merge_list)
+
+
+def remove_temporary_files(video_parts_filename, audio_parts_filename, video_filename, audio_filename):
+    os.remove(video_parts_filename)
+    os.remove(audio_parts_filename)
+    os.remove(video_filename)
+    os.remove(audio_filename)
+
+
+def download_one_file(args):
+    video_url = args.video_url
+    audio_url = args.audio_url
+    out_file = args.out_file
+    parts = args.parts
+    video_container = args.video_container
+    audio_container = args.audio_container
+    stutter_correction = args.stutter_correction
+
+    # Create links for all parts into a file
+    video_parts_filename = create_parts_links_file(
+        video_url, 'video', out_file, parts)
+    audio_parts_filename = create_parts_links_file(
+        audio_url, 'audio', out_file, parts)
+
+    # Download all parts that (read part links from file)
+    video_filename = download_parts(
+        video_parts_filename, 'video', out_file, video_container)
+    audio_filename = download_parts(
+        audio_parts_filename, 'audio', out_file, audio_container)
+
+    # Merge video and audio with ffmpeg
+    merge_video_audio(video_filename, audio_filename,
+                      out_file, stutter_correction)
+
+    # Remove temporary files
+    remove_temporary_files(video_parts_filename,
+                           audio_parts_filename, video_filename, audio_filename)
+
+
+def create_argument_list_from_string(line):
+    arguments_by_space = line.split()
+    arguments = []
+
+    STATE_MERGING = 'merging'
+    STATE_ADDING = 'adding'
+    state = STATE_ADDING
+
+    # Merge arguments between the " character
+    for argument in arguments_by_space:
+        if state == STATE_ADDING:
+            # Found " at the start
+            if str(argument).startswith('"'):
+                # If the same argument ends with " remove the " at the start and end and continue
+                if str(argument).endswith('"'):
+                    pruned_argument = argument[1:len(argument)-1]
+                    arguments.append(pruned_argument)
+                # Else we keep looking for an argument to end with "
+                else:
+                    # Remove " at the start
+                    merging_argument = argument[1:len(argument)]
+                    state = STATE_MERGING
+            # Just add the argument
+            else:
+                arguments.append(argument)
+        elif state == STATE_MERGING:
+            # Found the ending " add the merged argument to the arguments list
+            if str(argument).endswith('"'):
+                merging_argument += ' ' + argument[0:len(argument)-1]
+                arguments.append(merging_argument)
+                state = STATE_ADDING
+            # Else append the argument to the merging argument
+            else:
+                merging_argument += ' ' + argument
+
+    return arguments
+
+
+args = parser.parse_args()
+check_required_arguments(args, is_input_file=False)
+
+# Use file input for
+if args.input_file:
+    if not os.path.exists(args.input_file):
+        parser.error('Input file does not exist')
+
+    lines = open(args.input_file).read().splitlines()
+    line_number = 1
+    parsed_line_arguments = []
+
+    # Parse all lines and arguments to check for errors
+    for line in lines:
+        line_args = create_argument_list_from_string(line)
+        file_args = parser.parse_args(line_args)
+        check_required_arguments(
+            file_args, is_input_file=True, line_number=line_number)
+        parsed_line_arguments.append(file_args)
+        line_number += 1
+
+    # Download everything
+    for arguments in parsed_line_arguments:
+        download_one_file(arguments)
+
+# Else use regular arguments
+else:
+    download_one_file(args)

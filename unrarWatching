@@ -1,0 +1,51 @@
+#!/bin/bash
+
+MOVIE_FOLDER="/mnt/lvm/movies/HD-extracted"
+SERIES_FOLDER="/mnt/lvm/series/extracted"
+
+# write usage
+usage() {
+cat << EOF
+Usage: $0 [movie|series] directory
+
+Unrars all movies/series into the specified folder (recursive)
+EOF
+}
+
+if [ $# -lt 2 ]; then
+	usage
+	exit
+fi
+
+TYPE=$1
+shift
+
+if [ "$TYPE" = "movie" ]; then
+	DEST_FOLDER="$MOVIE_FOLDER"
+elif [ "$TYPE" = "series" ]; then
+	DEST_FOLDER="$SERIES_FOLDER"
+# 	echo "Not implemented yet"
+# 	exit
+else
+	echo "Wrong type, please specify either movie or series"
+	exit
+fi
+
+for FOLDER in "$@"; do 
+	# Symbolic link, get full link
+	if [ -d "$FOLDER" ] && [ -L "$FOLDER" ]; then
+		FOLDER=$(readlink -f "$FOLDER")
+	elif [ ! -d "$FOLDER" ]; then
+		echo "Skipping $FOLDER, as it's not a directory..."
+		continue
+	fi
+
+	# Unrar all
+	find "$FOLDER" -maxdepth 3 -iname "*.rar" -exec unrar e {} "$DEST_FOLDER" \;
+	
+	# Unrar subtitle(s)
+	unrar e "$DEST_FOLDER/"*.rar "$DEST_FOLDER"
+
+	# Remove subtitle rar
+	rm -f "$DEST_FOLDER/"*.rar
+done

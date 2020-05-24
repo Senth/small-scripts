@@ -1,0 +1,7 @@
+#!/bin/bash
+
+for file in *.mkv; do
+	filename="${file%.*}"
+	audio_out="$filename-audio2.mkv"
+	ffmpeg -i "$file" -map 0:2 -c copy "$audio_out"
+done

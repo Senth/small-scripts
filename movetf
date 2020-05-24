@@ -1,0 +1,92 @@
+#!/bin/bash
+
+if [ $# -lt 2 ]; then
+	echo "Usage: movetf type folder"
+	echo "Type can be either movie or series"
+	exit 1
+fi
+
+DEFAULT_PWD=`pwd`
+
+MOVIE_FOLDER="/mnt/lvm/movies/HD 1080p, 1080i, 720p"
+SERIES_FOLDER="/mnt/lvm/series"
+ANIME_FOLDER="/mnt/lvm/anime"
+TF_FOLDER=$PWD
+
+TYPE=$1
+shift
+
+for NAME in "$@"
+do
+
+	if [ $TYPE = "movie" ]; then
+		DEST_FOLDER=$MOVIE_FOLDER
+		DEST_NAME=$NAME
+	elif [ $TYPE = "anime" ]; then
+		DEST_FOLDER=$ANIME_FOLDER
+		cd $ANIME_FOLDER
+
+		# Anime is a folder
+		if [ -d "$NAME" ]; then
+			echo "Enter anime folder name. Leave empty to use the same name"
+			read -e -p ">" ANIME_NAME
+
+			# TODO what if the folder already exists?
+			if [ ! "$ANIME_NAME" = "" ]; then
+				DEST_NAME=$ANIME_NAME
+			else
+				DEST_NAME=$NAME
+			fi
+		# Anime is a single file, probably a movie
+		else
+			ANIME_NAME=""
+			while [ "$ANIME_NAME" = "" ]; do
+				echo "Enter anime folder name for the anime. Cannot be empty"
+				read -e -p ">" ANIME_NAME
+			done
+
+			mkdir "$ANIME_NAME"
+			DEST_FOLDER="$DEST_FOLDER/$ANIME_NAME"
+			DEST_NAME=$NAME
+
+		fi
+
+
+	elif [ $TYPE = "series" ]; then
+		DEST_FOLDER=$SERIES_FOLDER
+		DEST_NAME=$NAME
+		cd $SERIES_FOLDER
+		echo "Enter series folder. Leave empty if the series is a collection. Tab completion is possible."
+		read -e -p ">" SERIES_NAME
+		if [ ! "$SERIES_NAME" = "" ]; then
+			DEST_FOLDER="$DEST_FOLDER/$SERIES_NAME"
+	
+			# Remove trailing slash
+			DEST_FOLDER=${DEST_FOLDER%/}
+
+			# Create folder if it doesn't exist
+			if [ ! -d "$DEST_FOLDER" ]; then
+				mkdir "$DEST_FOLDER"
+				chown senth:admin "$DEST_FOLDER"
+				chmod 755 "$DEST_FOLDER"
+			fi
+		fi
+		cd $DEFAULT_FOLDER
+	else
+		echo "Wrong type, please specify either 'movie' or 'series'"
+		exit 1
+	fi
+
+	# Add name to folder
+	DEST_FOLDER="$DEST_FOLDER/$DEST_NAME"
+	SRC_FOLDER="$TF_FOLDER/$NAME"
+	echo "$SRC_FOLDER" "$DEST_FOLDER"
+
+	# Move the movie and link it
+	sudo mv "$SRC_FOLDER" "$DEST_FOLDER"
+	sudo ln -s "$DEST_FOLDER" "$SRC_FOLDER"
+
+	# Change users info
+	sudo chown senth:admin -R "$DEST_FOLDER"
+	sudo chmod 775 -R "$DEST_FOLDER"
+done

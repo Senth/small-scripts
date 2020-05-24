@@ -1,0 +1,49 @@
+#!/usr/bin/python
+
+import re
+import argparse
+import os
+from subprocess import Popen
+
+COMMAND_DIR = '/home/senth/.commands/'
+MAX_PROCESSES = 4
+
+parser = argparse.ArgumentParser(description='Download multiple youtube files')
+parser.add_argument('youtubeAddressFile', type=argparse.FileType('r'), help='Each line has the url link and a filename')
+
+args = parser.parse_args()
+
+failures = ''
+
+def download(address, outFile, outExt):
+    if outExt == 'mp3' or outExt == 'mp4':
+        prog = os.path.join(COMMAND_DIR, 'youtube2' + outExt)
+        return Popen([prog, address, outFile])
+    else:
+        failures += '\nInvalid extension for file: ' + outFile
+        return None
+
+processes = set()
+for line in args.youtubeAddressFile:
+    print('Line: ' + line)
+    match = re.search('^(.*)\ (.*\.(.*))$' ,line)
+    if match != None:
+        address = match.group(1)
+        outFile = match.group(2)
+        outExt = match.group(3)
+        process = download(address, outFile, outExt)
+
+        if process != None:
+            processes.add(process)
+            if len(processes) >= MAX_PROCESSES:
+                os.wait()
+                processes.difference_update([p for p in processes if p.poll() is not None])
+    else:
+        failures += '\nInvalid youtube line: ' + line
+
+while len(processes) > 0:
+    os.wait()
+    processes.difference_update([p for p in processes if p.poll() is not None])
+
+print('Failures:' + failures)
+print('Done!')

@@ -1,0 +1,72 @@
+#!/bin/bash
+
+DIR="/home/senth/ownCloud/temp/encode_movies"
+FREJA_IN="freja"
+FREJA_OUT="/home/senth/ownCloud/Freja & Matteus/Matteus filmer"
+SARA_IN="sara"
+SARA_OUT="/home/senth/ownCloud/Sara & Matteus/Matteus filmer"
+VIDEOS_IN="videos"
+VIDEOS_OUT="/home/senth/ownCloud/Camera Uploads/Videos"
+DONE_OUT="${DIR}/DONE"
+
+cd "$DIR"
+
+# $1: movie file
+# $2: out_dir
+# $3: codec (default: libx264)
+# $4: crf (default: 23)
+encode_file() {
+	local file=$1
+	local out_dir=$2
+
+	if [ -z "$3" ]; then
+		local codec="libx264"
+	else
+		local codec=$3
+	fi
+
+	if [ -z "$4" ]; then
+		local crf=23
+	else
+		local crf=$4
+	fi
+
+	if [ ! -e "$file" ]; then
+		return
+	fi
+
+	ongoing_file="${file}.ongoing"
+	# Skip ongoing files
+	if [ ! -e "$ongoing_file" ]; then
+		touch "$ongoing_file"
+
+		filename="${file##*/}"
+		outtemp="/tmp/$filename"
+		outfile="$out_dir/$filename"
+
+		ffmpeg -i "$file" -vcodec $codec -crf $crf "$outtemp"
+
+		# Keep record date for file
+		touch -r "$file" "$outtemp"
+
+		# Cleanup
+		mv "$outtemp" "$outfile"
+		rm "$ongoing_file"
+		mv "$file" "$DONE_OUT"
+	fi
+}
+
+# Sara Movies
+for file in $SARA_IN/*.mp4; do
+	encode_file "$file" "$SARA_OUT"
+done
+
+# Freja Movies
+for file in $FREJA_IN/*.mp4; do
+	encode_file "$file" "$FREJA_OUT"
+done
+
+# Camera Uploads
+for file in $VIDEOS_IN/*.mp4; do
+	encode_file "$file" "$VIDEOS_OUT"
+done

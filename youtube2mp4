@@ -1,0 +1,55 @@
+#!/bin/bash
+if [[ $# < 2 ]]; then
+	echo "Usage: youtube2mp4 youtube-url mp4/flv-video-file\n"
+	echo "If mp4/flv-video-files end with .mp4 it will convert the .flv"
+	echo "to mp4 format, otherwise it will just download the best"
+	echo "quality of flv format"
+	exit
+fi
+
+URL="$1"
+OUT_FILE="$2"
+
+out_filename=$(basename "$OUT_FILE")
+OUT_FORMAT=${out_filename##*.}
+
+# Download best quality, start with the best format, if not available
+# download next format
+FORMATS=( "37" "22" "18" )
+
+temp_file=~/.youtube-dl-$RANDOM-$RANDOM.mp4
+i=0
+echo "----------------------------"
+echo " FORMATS"
+echo "----------------------------"
+while [ $i -lt ${#FORMATS[@]} -a ! -f "$temp_file" ]; do
+	echo "i: $i		${#FORMATS[@]}"
+	youtube-dl --output=$temp_file --format=${FORMATS[$i]} "$URL"
+	if [ -f "$temp_file" ]; then
+		echo "${FORMATS[$i]}	: Available"
+	else
+		echo "${FORMATS[$i]}	: Not Available"
+	fi
+	((i++))
+done
+((i--))
+
+if [[ -f "$temp_file" ]]; then
+	echo "----------------------------"
+	echo " Found format: ${FORMATS[$i]}"
+	echo "----------------------------"
+	
+
+	# Don't convert, simply move
+# 	if [[ "$OUT_FORMAT" = "flv" ]]; then
+		mv "$temp_file" "$OUT_FILE"
+# 	else if [[ "$OUT_FORMAT" = "mp4" ]]; then
+# 		ffmpeg -i $temp_file -f mp4 -vcodec libx264 -vpre lossless_slow -crf 22 -threads 4 -qmin 3 -qmax 5 -bufsize 4096 -g 300 -acodec copy -y $OUT_FILE
+# 		rm $temp_file
+# 	fi
+
+else
+	echo "----------------------------"
+	echo " Could not find any format"
+	echo "----------------------------"
+fi

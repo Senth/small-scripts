@@ -1,0 +1,52 @@
+#!/bin/bash
+
+MESSAGE_TIME=10
+
+if [ $# -lt 2 ]; then
+	echo "Not enough parameters"
+	echo "Usage: shutdown_timer ENVIRONMENT (kde | system) TIME_IN_SECONDS"
+	exit
+fi
+ENVIRONMENT=$1
+TIME=$2
+TIME_IN_MINUTES=${TIME}/60
+
+
+# Commands, and environmental stuff
+if [ "$ENVIRONMENT" = "kde" ]; then
+	export KDE_FULL_SESSION=true
+	export KDE_SESSION_UID=1001
+	export KDE_SESSION_VERSION=4
+	export DISPLAY=:0.0
+
+	# Export dbus
+	DBUS_PID=`pgrep -u $USER startkde`
+	export $(cat /proc/${DBUS_PID}/environ | tr \\0 \\n | grep -E '^DBUS_SESSION_BUS_ADDRESS=')
+
+	# Create the messaging variable
+	MESSAGE_COMMAND_BEGIN="/usr/bin/kdialog --passivepopup"
+	MESSAGE_COMMEND_END=$MESSAGE_TIME
+
+	SHUTDOWN_COMMAND="DISPLAY=$DISPLAY /usr/bin/qdbus org.kde.ksmserver /KSMServer logout 0 2 2"
+elif [ "$ENVIRONMENT" = "system" ]; then
+	MESSAGE_COMMAND_BEGIN="echo"
+	MESSAGE_COMMAND_END=""
+
+	SHUTDOWN_COMMAND="shutdown -h now"
+fi
+
+# Show message
+if [ "$ENVIRONMENT" = "kde" ]; then
+	$MESSAGE_COMMAND_BEGIN "System is going to shutdown in $TIME_IN_MINUTES minutes, save all documents!" 60
+	kdialog --msgbox "System is going down in $TIME_IN_MINUTES minutes, save all documents!" &
+fi
+
+sleep $TIME
+
+eval $SHUTDOWN_COMMAND
+
+# Sometimes kde doesn't shutdown correctly, in that case try again and finally use a forced shutdown
+sleep 15
+eval $SHUTDOWN_COMMAND
+sleep 15
+shutdown -h now

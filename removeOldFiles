@@ -1,0 +1,39 @@
+#!/usr/bin/python3
+
+import argparse
+import sys
+import time
+import os
+
+
+# Args setup
+parser = argparse.ArgumentParser()
+parser.add_argument('days', metavar='N', type=int, help='Remove all files older than N days.')
+parser.add_argument('dir', metavar='DIR', help='The directory to search for old files (non-recursive).')
+
+
+# Parse args
+try:
+    args = parser.parse_args()
+except:
+    parser.print_help()
+    sys.exit(0)
+
+
+# Delete files
+now = time.time()
+delete_time = now - args.days * 86400
+
+for file in os.listdir(args.dir):
+    file_path = os.path.join(args.dir, file)
+    file_time = os.stat(file_path).st_mtime
+
+    if file_time < delete_time:
+        if os.path.isfile(file_path):
+            days_old = (str)((int)((now - file_time)/86400))
+            print('Remove (' + days_old + ' days) --> ' + file_path)
+            os.remove(file_path)
+    else:
+        days_old = (str)((int)((now - file_time)/86400))
+        print('Days old: {}, Filetime: {}, delete_time: {}'.format(days_old, file_time, delete_time))
+print('Done')

@@ -1,0 +1,36 @@
+#!/usr/bin/python3
+import os.path
+import re
+from subprocess import call
+
+matcher_first = re.compile("(.*)(-1)\.pdf")
+
+for filename in os.listdir("."):
+    match = matcher_first.match(filename)
+    if match is not None:
+        basename = match.group(1)
+
+        # Search for other files that match, i.e., that ends at -2, -3, etc.
+        files_to_combine = [filename]
+
+        file_found = True
+        next_file_postfix = 2
+        while file_found:
+            next_file = basename + '-' + str(next_file_postfix) + '.pdf'
+            if os.path.isfile(next_file):
+                files_to_combine.append(next_file)
+                next_file_postfix += 1
+            else:
+                file_found = False
+
+        # Convert if we have more than one file to convert
+        if len(files_to_combine) > 1:
+            out_file = basename + '.pdf'
+            command = ['pdftk']
+            command.extend(files_to_combine)
+            command.extend(['cat', 'output', out_file])
+            call(command)
+
+            # Remove original files
+            for file in files_to_combine:
+                os.remove(file)

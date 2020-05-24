@@ -1,0 +1,89 @@
+#!/bin/bash
+
+# TODO write usage
+usage() {
+cat << EOF
+Usage:
+bak mv|cp|restore file
+Moves the specified file to file.bak or creates a backup as file.bak
+
+Options:
+	-h, --help
+		Displays this text
+EOF
+}
+
+if [ $# -lt 2 ]; then
+	usage
+	exit
+fi
+
+BAK_FILES=()
+METHOD=""
+
+# Parse the arguments
+while [ -n "$*" ]; do
+	case $1 in
+	-h)
+		usage
+		exit 1
+		;;
+	--help)
+		usage
+		exit 1
+		;;
+	mv)
+		METHOD="mv"
+		;;
+	cp)
+		METHOD="cp"
+		;;
+	restore)
+		METHOD="restore"
+		;;
+	*)
+		# Print error if file does not exist!
+		if [ ! -e "$1" -a ! -d "$1" ]; then
+			echo "File $1 does not exist!"
+			exit 1
+		fi
+
+		BAK_FILES[${#BAK_FILES[*]}]="$1"
+	esac
+
+	shift
+done
+
+if [ "$METHOD" = "" ]; then
+	echo "Forgot to specify move/copy/restore method"
+	usage
+	exit
+fi
+
+# Move/copy all files
+for ((i=0; i <${#BAK_FILES[*]}; i++)); do
+	# Test if we need sudo?
+	SUDO=""
+	if [ ! `stat -c %u ${BAK_FILES[$i]}` = $UID ]; then
+		SUDO="sudo"
+	fi
+
+	if [ "$METHOD" = "cp" ]; then
+		$SUDO cp -a "${BAK_FILES[$i]}" "${BAK_FILES[$i]}.bak"
+	elif [ "$METHOD" = "mv" ]; then
+		$SUDO mv "${BAK_FILES[$i]}" "${BAK_FILES[$i]}.bak"
+	elif [ "$METHOD" = "restore" ]; then
+		dir=`realpath "${BAK_FILES[$i]}"`
+		dir=`dirname $dir`
+		original=`basename "${BAK_FILES[$i]}" .bak`
+		backup="${original}.bak"
+
+		# Move to tmp
+		if [ -e "$dir/$original" ]; then
+			$SUDO mv "$dir/$original" "/tmp/$original"
+		fi
+		
+		# Restore
+		$SUDO mv "$dir/$backup" "$dir/$original"
+	fi
+done

@@ -1,0 +1,25 @@
+#!/bin/bash
+
+usage() {
+cat << EOF
+Usage:
+$0 image parts
+Splits the image into parts. Puts the split image into the parent directory
+EOF
+}
+
+if [ $# -lt 2 ]; then
+	usage
+	exit
+fi
+
+IMAGE="$1"
+PARTS="$2"
+
+base=`basename "${IMAGE}"`
+filename="${base%.*}"
+ext="${base##*.}"
+
+out_filename="../${filename}-%d.${ext}"
+
+convert "$IMAGE" -crop ${PARTS}x1@ +repage +adjoin "${out_filename}" 
