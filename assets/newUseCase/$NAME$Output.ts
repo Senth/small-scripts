@@ -1,9 +1,8 @@
+import { Immutable } from '$CORE$/definitions/DeepReadonly'
 import { Output } from '$CORE$/definitions/Output'
 
-/**
- * TODO Write documentation for $NAME$Output
- * Output to the Adapter from the $NAME$Interactor
- */
-export interface $NAME$Output extends Output {
+interface $NAME$OutputInterface extends Output {
 	
 }
+
+export type $NAME$Output = Immutable<$NAME$OutputInterface>

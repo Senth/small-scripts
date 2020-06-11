@@ -16,12 +16,15 @@ export class $NAME$Interactor extends Interactor<$NAME$Input, $NAME$Output, $NAM
 
 	/**
 	 * TODO Write documentation for $NAME$Interactor.execute()
-	 * @param input:
+	 * @param input
 	 * @return {Promise.<$NAME$Output>}
 	 * @throws
 	 */
 	execute(input: $NAME$Input): Promise<$NAME$Output> {
+		this.input = input
+
 		return new Promise<$NAME$Output>((resolve, reject) => {
+			this.reject = reject
 			// TODO write implementation
 		})
 	}

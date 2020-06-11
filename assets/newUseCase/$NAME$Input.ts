@@ -1,9 +1,6 @@
+import { Immutable } from '$CORE$/definitions/DeepReadonly'
 import { Input } from '$CORE$/definitions/Input'
 
-/**
- * TODO Write documentation for $NAME$Input
- * Input from an adapter to the $NAME$Interactor
- */
-export interface $NAME$Input extends Input {
-	
-}
+interface $NAME$InputInterface extends Input {}
+
+export type $NAME$Input = Immutable<$NAME$InputInterface>

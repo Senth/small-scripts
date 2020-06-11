@@ -19,10 +19,11 @@ files_to_copy = [
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
-    'name', help='Name of the use case to create files for. Example: transaction-create')
+    'names', nargs='*', help='Name of the use cases to create files for. Example: transaction-create')
+parser.add_argument('-s', '--skip-parent-name', action='store_true',
+                    help=" Don't append the parent folder (if it exists) to the class names")
 
 args = parser.parse_args()
-out_dir = os.path.join(current_dir, args.name)
 
 
 def find_core_relative_path():
@@ -40,7 +41,8 @@ def find_core_relative_path():
         else:
             # If we go up one directory structure, remember the directory name so
             # we can append it to the file names later
-            name_prefix = os.path.basename(parent_dir) + '-' + name_prefix
+            if not args.skip_parent_name:
+                name_prefix = os.path.basename(parent_dir) + '-' + name_prefix
             parent_dir = os.path.dirname(parent_dir)
             parent_count += 1
             print("Trying with parent dir: " + parent_dir)
@@ -92,7 +94,9 @@ def convert_to_camel_case(name):
     return camel_case
 
 
-core_dir, name_prefix = find_core_relative_path()
-name_camel_case = convert_to_camel_case(name_prefix + args.name)
-create_out_dir(out_dir)
-copy_files(out_dir, core_dir, name_camel_case)
+for name in args.names:
+    out_dir = os.path.join(current_dir, name)
+    core_dir, name_prefix = find_core_relative_path()
+    name_camel_case = convert_to_camel_case(name_prefix + name)
+    create_out_dir(out_dir)
+    copy_files(out_dir, core_dir, name_camel_case)
