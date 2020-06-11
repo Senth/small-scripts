@@ -1,36 +1,52 @@
 #!/usr/bin/python3
 import os.path
 import re
+import argparse
 from subprocess import call
 
-matcher_first = re.compile("(.*)(-1)\.pdf")
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    '-d', '--dir', default='.', help='Search in the supplied directory instead of current directory')
+args = parser.parse_args()
 
-for filename in os.listdir("."):
-    match = matcher_first.match(filename)
+
+def full_path(filename):
+    return os.path.join(args.dir, filename)
+
+
+for filename in os.listdir(args.dir):
+    MATCHER_FIRST = re.compile("(.*)(-1)\.pdf")
+    match = MATCHER_FIRST.match(filename)
     if match is not None:
         basename = match.group(1)
+        print("Found file {}".format(match))
 
         # Search for other files that match, i.e., that ends at -2, -3, etc.
-        files_to_combine = [filename]
+        files_to_combine = [full_path(filename)]
 
         file_found = True
-        next_file_postfix = 2
+        next_file_number = 2
         while file_found:
-            next_file = basename + '-' + str(next_file_postfix) + '.pdf'
+            next_file = full_path(
+                basename + '-' + str(next_file_number) + '.pdf')
             if os.path.isfile(next_file):
                 files_to_combine.append(next_file)
-                next_file_postfix += 1
+                next_file_number += 1
             else:
                 file_found = False
 
         # Convert if we have more than one file to convert
         if len(files_to_combine) > 1:
-            out_file = basename + '.pdf'
+            print("Found more than one file -> Combining")
+            out_file = full_path(basename + '.pdf')
             command = ['pdftk']
             command.extend(files_to_combine)
             command.extend(['cat', 'output', out_file])
+            print("Full command: " + str(command))
             call(command)
 
             # Remove original files
             for file in files_to_combine:
                 os.remove(file)
+        else:
+            print("Only found one file -> Skipping to combine")
