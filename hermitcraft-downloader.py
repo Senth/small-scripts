@@ -5,15 +5,17 @@ import re
 from pathlib import Path
 from subprocess import run
 from os import path, makedirs, remove
+from datetime import datetime, timedelta
 
 
 MINECRAFT_DIR = '/mnt/lvm/series/Minecraft'
+MAX_DAYS_BACK = 1
 
 
 class Channel:
     RSS_PREFIX = "https://www.youtube.com/feeds/videos.xml?channel_id="
     REGEX = re.compile(
-        "<entry>.*?<yt:videoId>(.*?)<\/yt:videoId>.*?<title>(.*?)<\/title>.*?<\/entry>", re.DOTALL)
+        "<entry>.*?<yt:videoId>(.*?)<\/yt:videoId>.*?<title>(.*?)<\/title>.*?<published>(.*?)<\/published>.*?<\/entry>", re.DOTALL)
 
     def __init__(self, name, channel_id, filters=[]):
         self.name = name
@@ -31,11 +33,21 @@ class Channel:
         for groups in matches:
             id = groups[0]
             title = groups[1]
+            date = groups[2]
 
-            if not self._matches_filter(title):
+            if not self._matches_filter(title) and self._is_new(date):
                 video_ids.append(id)
 
         return video_ids
+
+    def _is_new(self, dateString):
+        date = datetime.strptime(dateString, '%Y-%m-%dT%H:%M:%S%z')
+        diff_time = datetime.now() - date.replace(tzinfo=None)
+
+        if diff_time.days <= MAX_DAYS_BACK:
+            return True
+        else:
+            return False
 
     def _matches_filter(self, title):
         for filter in self.filters:
@@ -95,7 +107,7 @@ class Downloader:
 
 channels = [
     Channel('Cubfan', 'UC9lJXqw4QZw-HWaZH6sN-xw'),
-    Channel('Xisuma', 'UCU9pX8hKcrx06XfOB-VQLdw'),
+    Channel('Xisuma', 'UCU9pX8hKcrx06XfOB-VQLdw', ['Live Now', 'LIVE NOW']),
     Channel('Keralis', 'UCcJgOennb0II4a_qi9OMkRA'),
     Channel('Etho', 'UCFKDEp9si4RmHFWJW1vYsMA'),
     Channel('Iskall', 'UCZ9x-z3iOnIbJxVpm1rsu2A'),
@@ -103,7 +115,7 @@ channels = [
     Channel('Grian', 'UCR9Gcq0CMm6YgTzsDxAxjOQ'),
     Channel('False Symmetry', 'UCuQYHhF6on6EXXO-_i_ClHQ'),
     Channel('ImpulseSV', 'UCuMJPFqazQI4SofSFEd-5zA'),
-    Channel('Hypnotizd', 'UChi5MyXJLQuPni3dM19Ar3g'),
+    Channel('Hypnotizd', 'UChi5MyXJLQuPni3dM19Ar3g', ['Modded']),
     Channel('Tango Tek', 'UC4YUKOBld2PoOLzk0YZ80lw'),
     Channel('Good Times With Scar', 'UCodkNmk9oWRTIYZdr_HuSlg'),
     Channel('Mumbo Jumbo', 'UChFur_NwVSbUozOcF_F2kMg'),
@@ -123,5 +135,6 @@ for channel in channels:
         downloader = Downloader(channel.name, video_id)
 
         if not downloader.has_downloaded():
-            print('not downloaded')
             downloader.download()
+        else:
+            print('Skipping, already downloaded video')
