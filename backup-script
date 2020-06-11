@@ -22,7 +22,7 @@ from: matteus.magnusson@gmail.com
 content-type: text/html"
 
 
-DAYS_TO_KEEP=150
+DAYS_TO_KEEP=60
 
 BACKUP_FILES_MEDIA=(
 	"/mnt/lvm/appz"
@@ -36,10 +36,11 @@ BACKUP_FILES_MEDIA=(
 	"/mnt/lvm/owncloud"
 	"/mnt/lvm/personal_development"
 	"/mnt/lvm/podcasts"
-	"/mnt/lvm/pron/Wet"
+	"/mnt/lvm/pron/Wet/best-parts"
+	"/mnt/lvm/pron/2GTS"
+	"/mnt/lvm/pron/Amateur"
 	"/mnt/lvm/senth/*"
 	"/mnt/lvm/spiddekauga"
-	"/mnt/lvm/users"
 )
 
 BACKUP_FILES_ROOT=(
@@ -57,7 +58,7 @@ BACKUP_FILES_ROOT=(
 )
 
 # How full the disk needs to be before it warns about a full disk.
-WARN_PERCENTAGE=70
+WARN_PERCENTAGE=95
 
 
 #########################
