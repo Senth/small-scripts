@@ -31,6 +31,7 @@ if args.frontend_port:
     args.git = True
 
 LETSENCRYPT_CONF_DIR = '/etc/letsencrypt/renewal/'
+LETSENCRYPT_WEBROOT = '/var/www/letsencrypt'
 WWW_DIR = '/var/www/'
 GIT_POSTFIX_DIR = 'public_html'
 APACHE_VHOSTS_DIR = '/etc/apache2/vhosts.d/'
@@ -92,7 +93,6 @@ def update_letsencrypt_conf_webroot(domain_name, webroot_dir):
 for domain_name in args.domain_names:
     # Calculate webroot
     webroot_dir = get_webroot_dir(domain_name)
-    create_webroot_dir(webroot_dir)
 
     # --- nginx configurationi ---
     # Other
@@ -100,13 +100,16 @@ for domain_name in args.domain_names:
         in_conf = VHOST_NGINX_BACKEND
     # Nodejs
     elif args.backend == 'nodejs':
+        create_webroot_dir(webroot_dir)
         if args.frontend_port:
             in_conf = VHOST_NGINX_FRONT_AND_BACKEND
         else:
             in_conf = VHOST_NGINX_BACKEND
     # Apache
     elif args.backend == 'apache':
+        create_webroot_dir(webroot_dir)
         in_conf = VHOST_NGINX_APACHE_BACKEND
+    
     (in_conf, out_conf) = get_config_files(NGINX_VHOSTS_DIR, in_conf, domain_name)
     write_config(in_conf, out_conf, domain_name, webroot_dir)
 
@@ -120,7 +123,7 @@ for domain_name in args.domain_names:
 
     # Run the certbot configuration
     if args.action == 'add':
-        run(['certbot', 'certonly', '--webroot', '-w', webroot_dir, '-d', domain_name])
+        run(['certbot', 'certonly', '--webroot', '-w', LETSENCRYPT_WEBROOT, '-d', domain_name])
     # Update webroot for certbot
     elif args.action == 'update' and not args.backend == 'other':
         update_letsencrypt_conf_webroot(domain_name, webroot_dir)
