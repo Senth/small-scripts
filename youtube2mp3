@@ -9,35 +9,11 @@ OUT_FILE="$2"
 
 # Download best quality, start with the best format, if not available
 # download next format
-FORMATS=( "37" "22" "18" )
 
-temp_file=/tmp/youtube-dl-$RANDOM-$RANDOM.mp4
-i=0
-echo "----------------------------"
-echo " FORMATS"
-echo "----------------------------"
-while [ $i -lt ${#FORMATS[@]} -a ! -f "$temp_file" ]; do
-	echo "i: $i		${#FORMATS[@]}"
-	youtube-dl --output=$temp_file --format=${FORMATS[$i]} "$URL"
-	if [ -f "$temp_file" ]; then
-		echo "${FORMATS[$i]}	: Available"
-	else
-		echo "${FORMATS[$i]}	: Not Available"
-	fi
-	((i++))
-done
-((i--))
-
+temp_file=youtube-dl-$RANDOM-$RANDOM.mp4.webm
+youtube-dl --output=$temp_file --audio-format best "$URL"
 if [ -f "$temp_file" ]; then
-	echo "----------------------------"
-	echo " Found format: ${FORMATS[$i]}"
-	echo "----------------------------"
-
 	# Create mp3 file
 	ffmpeg -i $temp_file -acodec libmp3lame -ac 2 -ab 320k -vn -y "$OUT_FILE"
 	rm $temp_file
-else
-	echo "----------------------------"
-	echo " Could not find any format"
-	echo "----------------------------"
 fi
