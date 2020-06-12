@@ -13,8 +13,8 @@
 #           python.exe Rename.py
 
 # Behavior:
-#  - Given a photo named "Photo Apr 01, 5 54 17 PM.jpg"  
-#  - with EXIF date taken of "4/1/2018 5:54:17 PM"  
+#  - Given a photo named "Photo Apr 01, 5 54 17 PM.jpg"
+#  - with EXIF date taken of "4/1/2018 5:54:17 PM"
 #  - when you run this script on its parent folder
 #  - then it will be renamed "20180401-175417.jpg"
 
@@ -46,36 +46,36 @@ else:
     # For each file
     for file_name in file_names:
 
-    # Get the file extension
-    file_ext = os.path.splitext(file_name)[1]
+        # Get the file extension
+        file_ext = os.path.splitext(file_name)[1]
 
-    # If the file does not have a valid file extension
-    # then skip it
-    if (file_ext not in valid_extensions):
-        continue
+        # If the file does not have a valid file extension
+        # then skip it
+        if (file_ext not in valid_extensions):
+            continue
 
-    # Create the old file path
-    old_file_path = os.path.join(folder_path, file_name)
+        # Create the old file path
+        old_file_path = os.path.join(folder_path, file_name)
 
-    # Open the image
-    image = Image.open(old_file_path)
+        # Open the image
+        image = Image.open(old_file_path)
 
-    # Get the date taken from EXIF metadata
-    date_taken = image._getexif()[36867]
+        # Get the date taken from EXIF metadata
+        date_taken = image._getexif()[36867]
 
-    # Close the image
-    image.close()
+        # Close the image
+        image.close()
 
-    # Reformat the date taken to "YYYYMMDD-HHmmss"
-    date_time = date_taken \
-        .replace(":", "")      \
-        .replace(" ", "-")
+        # Reformat the date taken to "YYYYMMDD-HHmmss"
+        date_time = date_taken \
+            .replace(":", "")      \
+            .replace(" ", "-")
 
-    # Combine the new file name and file extension
-    new_file_name = date_time + file_ext
+        # Combine the new file name and file extension
+        new_file_name = date_time + file_ext
 
-    # Create the new full file name
-    new_file_path = os.path.join(folder_path, new_file_name)
+        # Create the new full file name
+        new_file_path = os.path.join(folder_path, new_file_name)
 
-    # Rename the file
-    os.rename(old_file_path, new_file_path)
+        # Rename the file
+        os.rename(old_file_path, new_file_path)
