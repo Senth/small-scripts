@@ -98,7 +98,7 @@ class Downloader:
             in_filename = file.name
         in_filepath = path.join('/tmp', in_filename)
 
-        out_filename = re.sub(
+        out_filename = self.channel_name + ' - ' + re.sub(
             '(\d{4})(\d{2})(\d{2}) ', '\g<1>-\g<2>-\g<3> ', in_filename)
         out_filepath = path.join(self._get_out_dir(), out_filename)
 
