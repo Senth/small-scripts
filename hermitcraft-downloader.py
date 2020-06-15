@@ -5,6 +5,7 @@ import re
 from pathlib import Path
 from subprocess import run
 from os import path, makedirs, remove
+from shutil import copyfile
 from datetime import datetime, timedelta
 
 
@@ -79,11 +80,16 @@ class Downloader:
     def _convert(self):
         self._create_out_dir()
         in_filepath, out_filepath = self._get_in_and_out_filepath()
+        out_path_temp = '/tmp/out.mkv'
 
         run(['ffmpeg', '-i', in_filepath, '-threads', '2', '-filter_complex',
-             '[0:v]setpts=(2/3)*PTS[v];[0:a]atempo=1.5[a]', '-map', '[v]', '-map', '[a]', out_filepath])
+             '[0:v]setpts=(2/3)*PTS[v];[0:a]atempo=1.5[a]', '-map', '[v]', '-map', '[a]', out_path_temp])
 
-        # Delete tmp file
+        # Copy the temprory file to series/Minecraft
+        copyfile(out_path_temp, out_filepath)
+
+        # Delete temporary files original file
+        remove(out_path_temp)
         remove(in_filepath)
 
     def _get_out_dir(self):
@@ -118,7 +124,7 @@ channels = [
     Channel('Hypnotizd', 'UChi5MyXJLQuPni3dM19Ar3g', ['Modded']),
     Channel('Tango Tek', 'UC4YUKOBld2PoOLzk0YZ80lw'),
     Channel('Good Times With Scar', 'UCodkNmk9oWRTIYZdr_HuSlg'),
-    Channel('Mumbo Jumbo', 'UChFur_NwVSbUozOcF_F2kMg'),
+    Channel('Mumbo Jumbo', 'UChFur_NwVSbUozOcF_F2kMg', ['^(?!Hermitcraft).*']),
     Channel('BDoubleO', 'UClu2e7S8atp6tG2galK9hgg'),
     Channel('Zombie Cleo', 'UCjI5qxhtyv3srhWr60HemRw'),
     Channel('Docm', 'UC4O9HKe9Jt5yAhKuNv3LXpQ'),
