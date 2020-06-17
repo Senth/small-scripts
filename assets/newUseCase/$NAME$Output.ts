@@ -1,4 +1,4 @@
-import { Immutable } from '$CORE$/definitions/DeepReadonly'
+import { Immutable } from '$CORE$/definitions/Immutable'
 import { Output } from '$CORE$/definitions/Output'
 
 interface $NAME$OutputInterface extends Output {
