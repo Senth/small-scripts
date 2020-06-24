@@ -3,7 +3,7 @@
 ; Note that it will check if the user was active the last minute to run a rest break
 
 ; Name of games to disable this script for
-GAMES := ["ahk_exe Borderlands2.exe"]
+GAMES := ["ahk_exe Borderlands2.exe", " - S\d+ . E\d+"]
 ENERGY_LEVELS_FILE := "E:\ownCloud\Various\personal-data.csv"
 
 ; In milliseconds
@@ -32,12 +32,16 @@ if (A_TimeIdlePhysical < IDLE_TIME && not isAnyGameRunning()) {
 
 isAnyGameRunning() {
 	global GAMES
+	matched := False
+	SetTitleMatchMode, RegEx
 	for index, game in GAMES {
 		if (WinActive(game)) {
-			return True
+			matched := True
+			break
 		}
 	}
-	return False
+	SetTitleMatchMode, 1
+	return matched
 }
 
 createAndShowOverlay() {
@@ -146,6 +150,13 @@ saveEnergyLevels() {
 		FileAppend, %currentDate%`,energy`,%energyLevel%`n, %ENERGY_LEVELS_FILE%
 	}
 }
+
+; Make it impossible to close the window
+; F4::F3
+; LWin::LAlt
+; RWin::LAlt
+; LCtrl::LAlt
+; RCtrl::LAlt
 
 return
 
