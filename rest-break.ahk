@@ -152,11 +152,11 @@ saveEnergyLevels() {
 }
 
 ; Make it impossible to close the window
-; F4::F3
-; LWin::LAlt
-; RWin::LAlt
-; LCtrl::LAlt
-; RCtrl::LAlt
+F4::F3
+LWin::LAlt
+RWin::LAlt
+LCtrl::LAlt
+RCtrl::LAlt
 
 return
 
