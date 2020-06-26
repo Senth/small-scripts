@@ -8,7 +8,7 @@ describe('TODO #cold #use-case', () => {
 	let interactor: $NAME$Interactor
 	let repository: $NAME$Repository
 	let input: $NAME$Input
-	let output: $NAME$Output
+	let output: Promise<$NAME$Output>
 
 	beforeEach(() => {
 		
