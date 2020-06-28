@@ -3,8 +3,9 @@
 ; Note that it will check if the user was active the last minute to run a rest break
 
 ; Name of games to disable this script for
-GAMES := ["ahk_exe Borderlands2.exe", " - S\d+ . E\d+"]
+GAMES := ["ahk_exe Borderlands2.exe", " - S\d+ . E\d+", "Minecraft ahk_class GLFW30"]
 ENERGY_LEVELS_FILE := "E:\ownCloud\Various\personal-data.csv"
+ICON_FOLDER := "E:\ownCloud\configs\.commands\assets\icons\"
 
 ; In milliseconds
 IDLE_TIME := 60 * 1000
@@ -14,7 +15,9 @@ START_TIME := A_TickCount
 END_TIME := START_TIME + BREAK_TIME
 breakProgress := 0
 timeLeftLabel := 1
-energyLevel := 0
+energyLevel := False
+extraCategory := False
+extraAction := False
 
 FormatTime, currentDate,, yyyy-MM-dd HH:mm
 
@@ -99,23 +102,46 @@ createEnergyLevelButtons(label_y) {
 	LABEL_X := CENTER_X - LABEL_WIDTH / 2
 
 	; Add label "What's your current energy level?"
-	Gui, Add, Text, Center C64b5f6 X%LABEL_X% Y%LABEL_Y% W%LABEL_WIDTH%, What is your current energy level?
+	Gui, Add, Text, Center C64b5f6 X%LABEL_X% Y%label_y% W%LABEL_WIDTH%, What is your current energy level?
 
 	; Energy buttons
 	COLORS := [ "b71c1c", "C95024", "DB842C", "EDB733", "FFEB3B", "E4EF30", "C8F325",	"ADF719",	"91FB0E",	"76FF03" ]
 	Loop, 10 {
 		addButton(A_Index, COLORS, CENTER_X, CENTER_Y)
 	}
+
+	; Extra activity icons
+	addIcon(1, "shortWorkout", "fitness_white.png", CENTER_X, CENTER_Y)
+	addIcon(2, "foodBreakfast", "beverage_white.png", CENTER_X, CENTER_Y)
+	addIcon(3, "foodLunch", "bento_white.png", CENTER_X, CENTER_Y)
+	addIcon(4, "foodDinner", "dinner_white.png", CENTER_X, CENTER_Y)
+	addIcon(5, "foodHealthySnack", "eco_white.png", CENTER_X, CENTER_Y)
+	addIcon(6, "foodSnack", "fastfood_white.png", CENTER_X, CENTER_Y)
+	addIcon(7, "foodEveningSnack", "bedtime_white.png", CENTER_X, CENTER_Y)
 }
 
 addButton(index, colors, xCenter, yCenter) {
 	BUTTON_WIDTH := 65
 	BUTTON_HEIGHT := 100
 	xStart := xCenter - (BUTTON_WIDTH * 10 + BUTTON_WIDTH / 2 * 9) / 2
-	button_x := xStart + (index - 1) * BUTTON_WIDTH * 1.5
-	button_y := yCenter - BUTTON_HEIGHT / 2
+	buttonX := xStart + (index - 1) * BUTTON_WIDTH * 1.5
+	buttonY := yCenter - BUTTON_HEIGHT / 2
 	color := colors[index]
-	Gui, Add, Text, Center C%color% X%button_x% Y%button_y% W%BUTTON_WIDTH% H%BUTTON_HEIGHT% GenergyButton%index%Pressed, %index%
+	Gui, Add, Text, Center C%color% X%buttonX% Y%buttonY% W%BUTTON_WIDTH% H%BUTTON_HEIGHT% GenergyButton%index%Pressed, %index%
+}
+
+addIcon(index, labelName, fileName, xCenter, yCenter) {
+	global ICON_FOLDER
+	filePath := ICON_FOLDER . fileName
+
+	ICON_WIDTH := 200
+	ICONS := 7
+	iconY := yCenter + 200
+	xStart := xCenter - (ICON_WIDTH * (ICONS - 0.5)) / 2
+	iconX := xStart + (index - 1) * ICON_WIDTH
+	; Gui, Add, Text, CWhite X%iconX% Y%iconY%, %labelName%
+	; MsgBox, , Location, %filePath%, 4
+	Gui, Add, Picture, X%iconX% Y%iconY% G%labelName%, %filePath%
 }
 
 updateProgressBar() {
@@ -137,17 +163,25 @@ updateProgressBar() {
 }
 
 breakDone() {
-	saveEnergyLevels()
+	saveEnergyAndExtraAction()
 	Gui Destroy
 	ExitApp
 }
 
-saveEnergyLevels() {
+saveEnergyAndExtraAction() {
 	global energyLevel
-	global ENERGY_LEVELS_FILE
+	global extraAction
+	global extraCategory
+	saveToFile("energy", energyLevel)
+	saveToFile(extraCategory, extraAction)
+}
+
+saveToFile(category, value) {
 	global currentDate
-	if (energyLevel > 0) {
-		FileAppend, %currentDate%`,energy`,%energyLevel%`n, %ENERGY_LEVELS_FILE%
+	global ENERGY_LEVELS_FILE
+
+	if (category and value) {
+		FileAppend, %currentDate%`,%category%`,%value%`n, %ENERGY_LEVELS_FILE%
 	}
 }
 
@@ -200,3 +234,39 @@ energyButton9Pressed:
 energyButton10Pressed:
 	energyLevel := 10
 	return
+
+shortWorkout:
+	extraCategory := "activity"
+	extraAction := "short workout"
+	return
+
+foodBreakfast:
+	extraCategory := "food"
+	extraAction := "breakfast"
+	return
+
+foodLunch:
+	extraCategory := "food"
+	extraAction := "lunch"
+	return
+
+foodSnack:
+	extraCategory := "food"
+	extraAction := "snack"
+	return
+
+foodHealthySnack:
+	extraCategory := "food"
+	extraAction := "healthy snack"
+	return
+
+foodDinner:
+	extraCategory := "food"
+	extraAction := "dinner"
+	return
+
+foodEveningSnack:
+	extraCategory := "food"
+	extraAction := "evening snack"
+	return
+
