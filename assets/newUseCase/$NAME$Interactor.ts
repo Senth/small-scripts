@@ -23,9 +23,6 @@ export class $NAME$Interactor extends Interactor<$NAME$Input, $NAME$Output, $NAM
 	execute(input: $NAME$Input): Promise<$NAME$Output> {
 		this.input = input
 
-		return new Promise<$NAME$Output>((resolve, reject) => {
-			this.reject = reject
-			// TODO write implementation
-		})
+		
 	}
 }
