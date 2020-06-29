@@ -20,7 +20,7 @@ export class $NAME$Interactor extends Interactor<$NAME$Input, $NAME$Output, $NAM
 	 * @return {Promise.<$NAME$Output>}
 	 * @throws
 	 */
-	execute(input: $NAME$Input): Promise<$NAME$Output> {
+	async execute(input: $NAME$Input): Promise<$NAME$Output> {
 		this.input = input
 
 		
