@@ -22,7 +22,7 @@ from: matteus.magnusson@gmail.com
 content-type: text/html"
 
 
-DAYS_TO_KEEP=60
+DAYS_TO_KEEP=45
 
 BACKUP_FILES_MEDIA=(
 	"/mnt/lvm/appz"
