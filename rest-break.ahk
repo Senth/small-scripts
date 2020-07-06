@@ -186,11 +186,12 @@ saveToFile(category, value) {
 }
 
 ; Make it impossible to close the window
-F4::F3
-LWin::LAlt
-RWin::LAlt
-LCtrl::LAlt
-RCtrl::LAlt
+LWin::Escape
+RWin::Escape
+LCtrl::Escape
+RCtrl::Escape
+LAlt::Escape
+RAlt::Escape
 
 return
 
