@@ -3,7 +3,7 @@
 ; Note that it will check if the user was active the last minute to run a rest break
 
 ; Name of games to disable this script for
-GAMES := ["ahk_exe Borderlands2.exe", " - S\d+ . E\d+", "Minecraft ahk_class GLFW30"]
+GAMES := ["ahk_exe Borderlands2.exe", " - S\d+ . E\d+", "Minecraft ahk_class GLFW30", "ahk_exe Duskers.exe"]
 ENERGY_LEVELS_FILE := "E:\ownCloud\Various\personal-data.csv"
 ICON_FOLDER := "E:\ownCloud\configs\.commands\assets\icons\"
 
