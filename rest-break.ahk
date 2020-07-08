@@ -10,7 +10,7 @@ ICON_FOLDER := "E:\ownCloud\configs\.commands\assets\icons\"
 ; In milliseconds
 IDLE_TIME := 60 * 1000
 BREAK_TIME := 3.5 * 60 * 1000
-BREAK_TIME := 5 * 1000
+; BREAK_TIME := 5 * 1000
 START_TIME := A_TickCount
 END_TIME := START_TIME + BREAK_TIME
 breakProgress := 0
