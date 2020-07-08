@@ -3,14 +3,14 @@
 ; Note that it will check if the user was active the last minute to run a rest break
 
 ; Name of games to disable this script for
-GAMES := ["ahk_exe Borderlands2.exe", " - S\d+ . E\d+", "Minecraft ahk_class GLFW30", "ahk_exe Duskers.exe"]
+GAMES := ["Minecraft ahk_class GLFW30"]
 ENERGY_LEVELS_FILE := "E:\ownCloud\Various\personal-data.csv"
 ICON_FOLDER := "E:\ownCloud\configs\.commands\assets\icons\"
 
 ; In milliseconds
 IDLE_TIME := 60 * 1000
 BREAK_TIME := 3.5 * 60 * 1000
-; BREAK_TIME := 5 * 1000
+BREAK_TIME := 5 * 1000
 START_TIME := A_TickCount
 END_TIME := START_TIME + BREAK_TIME
 breakProgress := 0
@@ -22,7 +22,7 @@ extraAction := False
 FormatTime, currentDate,, yyyy-MM-dd HH:mm
 
 ; User has been active - activate overlay
-if (A_TimeIdlePhysical < IDLE_TIME && not isAnyGameRunning()) {
+if (A_TimeIdlePhysical < IDLE_TIME && not isAnyGameRunning() && not isActiveWindowFullscreen()) {
 	createAndShowOverlay()
 	updateProgressBar()
 
@@ -44,7 +44,23 @@ isAnyGameRunning() {
 		}
 	}
 	SetTitleMatchMode, 1
+
 	return matched
+}
+
+isActiveWindowFullscreen() {
+	winId := WinExist("A")
+
+	if (!winId)
+		return False
+
+	WinGet style, Style, ahk_id %winId%
+	WinGetPos ,,, width, height, A
+
+	; 0x800000 is WS_BORDER.
+	; 0x20000000 is WS_MINIMIZE.
+	; no border and not minimized
+	Return ((style & 0x20800000) or height < A_ScreenHeight or width < A_ScreenWidth) ? false : true
 }
 
 createAndShowOverlay() {
