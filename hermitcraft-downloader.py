@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 
 
 MINECRAFT_DIR = '/mnt/lvm/series/Minecraft'
-MAX_DAYS_BACK = 1
+MAX_DAYS_BACK = 3
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-v', '--verbose', action='store_true',
@@ -140,9 +140,6 @@ class Downloader:
         self.video = video
 
     def has_downloaded(self):
-        # REMOVE remove after a few days
-        if any(Path(MINECRAFT_DIR).rglob('*' + self.video.id + '*')):
-            return True
         return self.db.has_downloaded(self.video.id)
 
     def download(self):
