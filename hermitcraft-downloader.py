@@ -143,10 +143,15 @@ class Downloader:
         return self.db.has_downloaded(self.video.id)
 
     def download(self):
+        completed_process = True
         if not args.pretend:
-            run(['youtube-dl', '-o', Downloader.TMP_DOWNLOAD, '-f', 'bestvideo[height>=1080,fps=60]+bestaudio',
-                 '--merge-output-format', 'mkv', '--restrict-filenames', '--', self.video.id])
-        self._convert()
+            completed_process = run(['youtube-dl', '-o', Downloader.TMP_DOWNLOAD, '-f', 'bestvideo[height>=1080,fps=60]+bestaudio',
+                                     '--merge-output-format', 'mkv', '--restrict-filenames', '--', self.video.id]).returncode == 0
+        if completed_process:
+            self._convert()
+        else:
+            print('Failed to download video {} - {}, from channel {}'.format(
+                self.video.title, self.video.id, self.video.channel_name))
 
         print(str(self._get_out_filepath()))
 
@@ -157,9 +162,9 @@ class Downloader:
 
         if not args.pretend:
             completed_process = run(['ffmpeg', '-i', Downloader.TMP_DOWNLOAD, '-metadata', 'title="{}"'.format(self.video.title), '-threads', '2', '-filter_complex',
-                                     '[0:v]setpts=(2/3)*PTS[v];[0:a]atempo=1.5[a]', '-map', '[v]', '-map', '[a]', Downloader.TMP_CONVERTED])
+                                     '[0:v]setpts=(2/3)*PTS[v];[0:a]atempo=1.5[a]', '-map', '[v]', '-map', '[a]', Downloader.TMP_CONVERTED]).returncode == 0
 
-            if completed_process.returncode == 0:
+            if completed_process:
                 downloaded = True
                 # Copy the temprory file to series/Minecraft
                 log_message('{} Copying file to {}'.format(
