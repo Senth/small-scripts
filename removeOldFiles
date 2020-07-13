@@ -4,7 +4,7 @@ import argparse
 import sys
 import time
 import os
-
+import re
 
 # Args setup
 parser = argparse.ArgumentParser()
@@ -16,6 +16,8 @@ parser.add_argument('-r', '--recursive', action='store_true',
                     help='Search recursively through directories.')
 parser.add_argument('-p', '--pretend', action='store_true',
                     help='Only pretend to remove the files, use -v to see which files would get deleted')
+parser.add_argument('-f', '--filter',
+                    help='Only remove files matching the specific filter')
 parser.add_argument('-v', '--verbose', action='store_true',
                     help='Print out which files would get deleted')
 
@@ -32,6 +34,11 @@ now = time.time()
 delete_time = now - args.days * 86400
 
 
+def log(message):
+    if args.verbose:
+        print(message)
+
+
 def search_and_delete_in_dir(dir):
     for file in os.listdir(dir):
         file_path = os.path.join(dir, file)
@@ -39,19 +46,23 @@ def search_and_delete_in_dir(dir):
 
         # File
         if os.path.isfile(file_path):
-            # Delete
-            if file_time < delete_time:
-                days_old = (str)((int)((now - file_time)/86400))
-                if args.verbose:
-                    print('Remove {} ({} days old)'.format(file_path, days_old))
-                if not args.pretend:
-                    os.remove(file_path)
+            # Filter
+            if not args.filter or re.match(args.filter, file_path):
+                # Delete
+                if file_time < delete_time:
+                    days_old = (str)((int)((now - file_time)/86400))
+                    log('Remove {} ({} days old)'.format(file_path, days_old))
+                    if not args.pretend:
+                        os.remove(file_path)
+                # Keep
+                else:
+                    days_old = (str)((int)((now - file_time)/86400))
+                    log('Keep {} (Days old: {}, Filetime: {}, Delete_time: {})'.format(
+                        file_path, days_old, file_time, delete_time))
             # Keep
             else:
-                days_old = (str)((int)((now - file_time)/86400))
-                if args.verbose:
-                    print('Keep {} (Days old: {}, Filetime: {}, Delete_time: {})'.format(
-                        file_path, days_old, file_time, delete_time))
+                log('Keep {}, not matching filter: {}'.format(
+                    file_path, args.filter))
         # Recursive
         elif args.recursive and os.path.isdir(file_path):
             search_and_delete_in_dir(file_path)
@@ -59,5 +70,4 @@ def search_and_delete_in_dir(dir):
 
 # MAIN
 search_and_delete_in_dir(args.dir)
-if args.verbose:
-    print('Done')
+log('Done')
