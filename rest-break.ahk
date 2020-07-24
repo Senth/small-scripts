@@ -4,7 +4,7 @@
 
 ; Name of games to disable this script for
 GAMES := ["Minecraft ahk_class GLFW30"]
-ENERGY_LEVELS_FILE := "E:\ownCloud\Various\personal-data.csv"
+ENERGY_LEVELS_FILE := "O:\ownCloud\Various\personal-data.csv"
 ICON_FOLDER := "E:\ownCloud\configs\.commands\assets\icons\"
 
 ; In milliseconds
@@ -65,7 +65,7 @@ isActiveWindowFullscreen() {
 
 createAndShowOverlay() {
 	; Get screen information
-	SysGet, SCREEN_WIDTH, 78 
+	SysGet, SCREEN_WIDTH, 78
 	SysGet, SCREEN_HEIGHT, 79
 	SysGet, SCREEN_X, 76
 	SysGet, SCREEN_Y, 77
@@ -105,7 +105,7 @@ createAndShowOverlay() {
 
 createEnergyLevelButtons(label_y) {
 	; Get screen information
-	SysGet, SCREEN_WIDTH, 78 
+	SysGet, SCREEN_WIDTH, 78
 	SysGet, SCREEN_HEIGHT, 79
 	SysGet, SCREEN_X, 76
 	SysGet, SCREEN_Y, 77
