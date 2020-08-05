@@ -231,6 +231,7 @@ channels = [
     Channel('Gnembon', 'UCRtyLX-ej-H1PSiaw8g9aIA'),
     Channel('Rendog', 'UCDpdtiUfcdUCzokpRWORRqA'),
     Channel('Stressmonster', 'UC24lkOxZYna9nlXYBcJ9B8Q'),
+    Channel('Zedaph', 'UCPK5G4jeoVEbUp5crKJl6CQ'),
 ]
 
 db = Model()
