@@ -13,6 +13,7 @@ from datetime import datetime, timedelta
 
 MINECRAFT_DIR = '/mnt/lvm/series/Minecraft'
 MAX_DAYS_BACK = 3
+THREADS = 1
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-v', '--verbose', action='store_true',
@@ -161,7 +162,7 @@ class Downloader:
         downloaded = False
 
         if not args.pretend:
-            completed_process = run(['ffmpeg', '-i', Downloader.TMP_DOWNLOAD, '-metadata', 'title="{}"'.format(self.video.title), '-threads', '2', '-filter_complex',
+            completed_process = run(['ffmpeg', '-i', Downloader.TMP_DOWNLOAD, '-metadata', 'title="{}"'.format(self.video.title), '-threads', str(THREADS), '-filter_complex',
                                      '[0:v]setpts=(2/3)*PTS[v];[0:a]atempo=1.5[a]', '-map', '[v]', '-map', '[a]', Downloader.TMP_CONVERTED]).returncode == 0
 
             if completed_process:
