@@ -3,16 +3,17 @@
 ; Note that it will check if the user was active the last minute to run a rest break
 
 ; Name of games to disable this script for
-GAMES := ["Minecraft ahk_class GLFW30"]
+GAMES := []
+GAMES_WITH_DELAYED_BREAK := ["Minecraft ahk_class GLFW30"]
 ENERGY_LEVELS_FILE := "O:\ownCloud\Various\personal-data.csv"
 ICON_FOLDER := "E:\ownCloud\configs\.commands\assets\icons\"
+NOTIFICATION_SOUND := "E:\ownCloud\Various\Sounds\Notification\dong.wav"
 
 ; In milliseconds
 IDLE_TIME := 60 * 1000
 BREAK_TIME := 3.5 * 60 * 1000
 ; BREAK_TIME := 5 * 1000
-START_TIME := A_TickCount
-END_TIME := START_TIME + BREAK_TIME
+BREAK_GAME_DELAY_TIME := 10 * 1000
 breakProgress := 0
 timeLeftLabel := 1
 energyLevel := False
@@ -22,7 +23,15 @@ extraAction := False
 FormatTime, currentDate,, yyyy-MM-dd HH:mm
 
 ; User has been active - activate overlay
-if (A_TimeIdlePhysical < IDLE_TIME && not isAnyGameRunning() && not isActiveWindowFullscreen()) {
+if (A_TimeIdlePhysical < IDLE_TIME && not isAnyGameWithoutBreakRunning() && not isActiveWindowFullscreen()) {
+	; Is a game with break being played, delay break with around 30 seconds
+	if (isAnyGameWithBreakRunning()) {
+		SoundPlay, %NOTIFICATION_SOUND%, 1
+		Sleep, BREAK_GAME_DELAY_TIME
+	}
+	START_TIME := A_TickCount
+	END_TIME := START_TIME + BREAK_TIME
+
 	createAndShowOverlay()
 	updateProgressBar()
 
@@ -33,8 +42,25 @@ if (A_TimeIdlePhysical < IDLE_TIME && not isAnyGameRunning() && not isActiveWind
 	ExitApp
 }
 
-isAnyGameRunning() {
+isAnyGameWithBreakRunning() {
+	global GAMES_WITH_DELAYED_BREAK
+
+	matched := False
+	SetTitleMatchMode, RegEx
+	for index, game in GAMES_WITH_DELAYED_BREAK {
+		if (WinActive(game)) {
+			matched := True
+			break
+		}
+	}
+	SetTitleMatchMode, 1
+
+	return matched
+}
+
+isAnyGameWithoutBreakRunning() {
 	global GAMES
+
 	matched := False
 	SetTitleMatchMode, RegEx
 	for index, game in GAMES {
