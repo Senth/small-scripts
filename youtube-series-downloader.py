@@ -11,7 +11,9 @@ from shutil import copyfile
 from datetime import datetime, timedelta
 
 
-MINECRAFT_DIR = '/mnt/lvm/series/Minecraft'
+SERIES_DIR = '/mnt/lvm/series/'
+MINECRAFT_DIR = 'Minecraft'
+YOUTUBE_DIR = 'YouTube'
 MAX_DAYS_BACK = 3
 THREADS = 1
 
@@ -86,13 +88,18 @@ class Channel:
     REGEX = re.compile(
         "<entry>.*?<yt:videoId>(.*?)<\/yt:videoId>.*?<title>(.*?)<\/title>.*?<published>(.*?)<\/published>.*?<\/entry>", re.DOTALL)
 
-    def __init__(self, name, channel_id, filters=[]):
+    def __init__(self, name, channel_id, collection_dir, excludes=[], includes=[]):
         self.name = name
         self.channel_id = channel_id
-        self.filters = filters
+        self.collection_dir = collection_dir
+        self.excludes = excludes
+        self.includes = includes
 
     def get_videos(self):
-        log_message('\n\nGetting videos from ' + self.name)
+        log_message('\n\n**********************************')
+        log_message(self.name.center(34))
+        log_message('**********************************')
+
         url = Channel.RSS_PREFIX + self.channel_id
         xml = requests.get(url).text
 
@@ -106,7 +113,7 @@ class Channel:
             date = groups[2]
             log_message('{}: Checking video ({})'.format(id, date))
 
-            if not self._matches_filter(title) and self._is_new(date):
+            if not self._matches_excludes(title) and self._matches_includes(title) and self._is_new(date):
                 video = Video(id, date, title, self.name)
                 log_message('{}: Appending video: {}'.format(id, title))
                 videos.append(video)
@@ -124,10 +131,22 @@ class Channel:
             log_message('is old by {} days'.format(diff_time.days))
             return False
 
-    def _matches_filter(self, title):
-        for filter in self.filters:
+    def _matches_excludes(self, title):
+        for filter in self.excludes:
             if re.search(filter, title):
-                log_message('({}) Matched filter: {}'.format(title, filter))
+                log_message(
+                    '--- ({}) Matched exclude: {}'.format(title, filter))
+                return True
+        return False
+
+    def _matches_includes(self, title):
+        if len(self.includes) == 0:
+            return True
+
+        for filter in self.includes:
+            if re.search(filter, title):
+                log_message(
+                    '+++ ({}) Matched include: {}'.format(title, filter))
                 return True
         return False
 
@@ -136,9 +155,10 @@ class Downloader:
     TMP_DOWNLOAD = '/tmp/downloaded.mkv'
     TMP_CONVERTED = '/tmp/converted.mp4'
 
-    def __init__(self, db, video):
+    def __init__(self, db, video, collection_dir):
         self.db = db
         self.video = video
+        self.collection_dir = collection_dir
 
     def has_downloaded(self):
         return self.db.has_downloaded(self.video.id)
@@ -182,7 +202,7 @@ class Downloader:
             self.db.add_downloaded(self.video.channel_name, self.video.id)
 
     def _get_out_dir(self):
-        return path.join(MINECRAFT_DIR, self.video.channel_name, 'Season 01')
+        return path.join(SERIES_DIR, self.collection_dir, self.video.channel_name, 'Season 01')
 
     def _create_out_dir(self):
         makedirs(self._get_out_dir(), exist_ok=True)
@@ -211,29 +231,40 @@ class Downloader:
 
 
 channels = [
-    Channel('Cubfan', 'UC9lJXqw4QZw-HWaZH6sN-xw'),
-    Channel('Xisuma', 'UCU9pX8hKcrx06XfOB-VQLdw', [r'Live Now', r'LIVE NOW']),
-    Channel('Keralis', 'UCcJgOennb0II4a_qi9OMkRA'),
-    Channel('Etho', 'UCFKDEp9si4RmHFWJW1vYsMA'),
-    Channel('Iskall', 'UCZ9x-z3iOnIbJxVpm1rsu2A'),
-    Channel('Logical Geek Boy', 'UCJx74HaacAjDZk8LPdOfUFQ'),
-    Channel('Grian', 'UCR9Gcq0CMm6YgTzsDxAxjOQ'),
-    Channel('False Symmetry', 'UCuQYHhF6on6EXXO-_i_ClHQ'),
-    Channel('ImpulseSV', 'UCuMJPFqazQI4SofSFEd-5zA'),
-    Channel('Hypnotizd', 'UChi5MyXJLQuPni3dM19Ar3g', [r'Modded']),
-    Channel('Tango Tek', 'UC4YUKOBld2PoOLzk0YZ80lw'),
-    Channel('Good Times With Scar', 'UCodkNmk9oWRTIYZdr_HuSlg'),
-    Channel('Mumbo Jumbo', 'UChFur_NwVSbUozOcF_F2kMg',
-            [r'^(?!Hermitcraft).*']),
-    Channel('BDoubleO', 'UClu2e7S8atp6tG2galK9hgg'),
-    Channel('Zombie Cleo', 'UCjI5qxhtyv3srhWr60HemRw',
-            [r'^(?!Hermitcraft).*']),
-    Channel('Docm', 'UC4O9HKe9Jt5yAhKuNv3LXpQ'),
-    Channel('Ilmango', 'UCHSI8erNrN6hs3sUK6oONLA'),
-    Channel('Gnembon', 'UCRtyLX-ej-H1PSiaw8g9aIA'),
-    Channel('Rendog', 'UCDpdtiUfcdUCzokpRWORRqA'),
-    Channel('Stressmonster', 'UC24lkOxZYna9nlXYBcJ9B8Q'),
-    Channel('Zedaph', 'UCPK5G4jeoVEbUp5crKJl6CQ'),
+    # --------------------------
+    # --- MINECRAFT CHANNELS ---
+    # --------------------------
+    Channel('Cubfan', 'UC9lJXqw4QZw-HWaZH6sN-xw', MINECRAFT_DIR),
+    Channel('Xisuma', 'UCU9pX8hKcrx06XfOB-VQLdw', MINECRAFT_DIR,
+            excludes=[r'Live Now', r'LIVE NOW']),
+    Channel('Keralis', 'UCcJgOennb0II4a_qi9OMkRA', MINECRAFT_DIR),
+    Channel('Etho', 'UCFKDEp9si4RmHFWJW1vYsMA', MINECRAFT_DIR),
+    Channel('Iskall', 'UCZ9x-z3iOnIbJxVpm1rsu2A', MINECRAFT_DIR),
+    Channel('Logical Geek Boy', 'UCJx74HaacAjDZk8LPdOfUFQ', MINECRAFT_DIR),
+    Channel('Grian', 'UCR9Gcq0CMm6YgTzsDxAxjOQ', MINECRAFT_DIR),
+    Channel('False Symmetry', 'UCuQYHhF6on6EXXO-_i_ClHQ', MINECRAFT_DIR),
+    Channel('ImpulseSV', 'UCuMJPFqazQI4SofSFEd-5zA', MINECRAFT_DIR),
+    Channel('Hypnotizd', 'UChi5MyXJLQuPni3dM19Ar3g', MINECRAFT_DIR,
+            excludes=[r'Modded']),
+    Channel('Tango Tek', 'UC4YUKOBld2PoOLzk0YZ80lw', MINECRAFT_DIR),
+    Channel('Good Times With Scar', 'UCodkNmk9oWRTIYZdr_HuSlg', MINECRAFT_DIR),
+    Channel('Mumbo Jumbo', 'UChFur_NwVSbUozOcF_F2kMg', MINECRAFT_DIR,
+            includes=[r'Hermitcraft']),
+    Channel('BDoubleO', 'UClu2e7S8atp6tG2galK9hgg', MINECRAFT_DIR),
+    Channel('Zombie Cleo', 'UCjI5qxhtyv3srhWr60HemRw', MINECRAFT_DIR,
+            includes=[r'Hermitcraft']),
+    Channel('Docm', 'UC4O9HKe9Jt5yAhKuNv3LXpQ', MINECRAFT_DIR),
+    Channel('Ilmango', 'UCHSI8erNrN6hs3sUK6oONLA', MINECRAFT_DIR),
+    Channel('Gnembon', 'UCRtyLX-ej-H1PSiaw8g9aIA', MINECRAFT_DIR),
+    Channel('Rendog', 'UCDpdtiUfcdUCzokpRWORRqA', MINECRAFT_DIR),
+    Channel('Stressmonster', 'UC24lkOxZYna9nlXYBcJ9B8Q', MINECRAFT_DIR),
+    Channel('Zedaph', 'UCPK5G4jeoVEbUp5crKJl6CQ', MINECRAFT_DIR),
+
+    # ------------------------------
+    # --- Other YouTube Channels ---
+    # ------------------------------
+    Channel('Xterminator', 'UC5StrkKVnU2xkjV0mVJ9yTw', YOUTUBE_DIR,
+            includes=[r'Spotlight', r'ALT-F4']),
 ]
 
 db = Model()
@@ -241,14 +272,15 @@ total_downloaded = 0
 
 for channel in channels:
     videos = channel.get_videos()
+    log_message('')
 
     for video in videos:
-        downloader = Downloader(db, video)
+        downloader = Downloader(db, video, channel.collection_dir)
 
         if not downloader.has_downloaded():
             downloader.download()
             total_downloaded += 1
         else:
-            log_message('Skipping, already downloaded video')
+            log_message('------ Skipping, no new videos to download ------')
 
-log_message('Downloaded {} episodes'.format(total_downloaded))
+log_message('\n\n\nDownloaded {} episodes'.format(total_downloaded))
