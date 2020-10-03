@@ -8,7 +8,8 @@ from pathlib import Path
 from subprocess import run
 from os import path, makedirs, remove
 from shutil import copyfile
-from datetime import datetime, timedelta
+from datetime import datetime
+from typing import List, Pattern
 
 
 SERIES_DIR = '/mnt/lvm/series/'
@@ -47,7 +48,7 @@ class Model:
             'Create TABLE IF NOT EXISTS video (id TEXT, episode_number INTEGER, channel_name TEXT)')
         self.connection.commit()
 
-    def add_downloaded(self, channel_name, video_id):
+    def add_downloaded(self, channel_name: str, video_id: str):
         episode_number = self.get_next_episode_number(channel_name)
 
         log_message("{} Add to downloaded with episode number {}.".format(
@@ -59,12 +60,12 @@ class Model:
                 sql, (video_id, episode_number, channel_name))
             self.connection.commit()
 
-    def get_next_episode_number(self, channel_name):
+    def get_next_episode_number(self, channel_name) -> int:
         sql_get_latest_episode = "SELECT episode_number FROM video WHERE channel_name=? ORDER BY episode_number DESC"
         self.cursor.execute(sql_get_latest_episode, [channel_name])
         row = self.cursor.fetchone()
         if row:
-            return row[0] + 1
+            return int(row[0]) + 1
         else:
             return 1
 
@@ -76,7 +77,7 @@ class Model:
 
 
 class Video:
-    def __init__(self, id, date, title, channel_name):
+    def __init__(self, id: str, date: str, title: str, channel_name: str):
         self.id = id
         self.date = date
         self.title = title
@@ -88,14 +89,14 @@ class Channel:
     REGEX = re.compile(
         "<entry>.*?<yt:videoId>(.*?)<\/yt:videoId>.*?<title>(.*?)<\/title>.*?<published>(.*?)<\/published>.*?<\/entry>", re.DOTALL)
 
-    def __init__(self, name, channel_id, collection_dir, excludes=[], includes=[]):
+    def __init__(self, name: str, channel_id: str, collection_dir: str, excludes: List[Pattern] = [], includes: List[Pattern] = []):
         self.name = name
         self.channel_id = channel_id
         self.collection_dir = collection_dir
         self.excludes = excludes
         self.includes = includes
 
-    def get_videos(self):
+    def get_videos(self) -> List[Video]:
         log_message('\n\n**********************************')
         log_message(self.name.center(34))
         log_message('**********************************')
@@ -120,7 +121,7 @@ class Channel:
 
         return videos
 
-    def _is_new(self, dateString):
+    def _is_new(self, dateString: str) -> bool:
         date = datetime.strptime(dateString, '%Y-%m-%dT%H:%M:%S%z')
         diff_time = datetime.now() - date.replace(tzinfo=None)
 
@@ -131,7 +132,7 @@ class Channel:
             log_message('is old by {} days'.format(diff_time.days))
             return False
 
-    def _matches_excludes(self, title):
+    def _matches_excludes(self, title: str) -> bool:
         for filter in self.excludes:
             if re.search(filter, title):
                 log_message(
@@ -139,7 +140,7 @@ class Channel:
                 return True
         return False
 
-    def _matches_includes(self, title):
+    def _matches_includes(self, title: str) -> bool:
         if len(self.includes) == 0:
             return True
 
@@ -155,12 +156,12 @@ class Downloader:
     TMP_DOWNLOAD = '/tmp/downloaded.mkv'
     TMP_CONVERTED = '/tmp/converted.mp4'
 
-    def __init__(self, db, video, collection_dir):
+    def __init__(self, db: Model, video: Video, collection_dir: str):
         self.db = db
         self.video = video
         self.collection_dir = collection_dir
 
-    def has_downloaded(self):
+    def has_downloaded(self) -> bool:
         return self.db.has_downloaded(self.video.id)
 
     def download(self):
@@ -171,10 +172,10 @@ class Downloader:
         if completed_process:
             self._convert()
         else:
-            print('Failed to download video {} - {}, from channel {}'.format(
+            log_message('Failed to download video {} - {}, from channel {}'.format(
                 self.video.title, self.video.id, self.video.channel_name))
 
-        print(str(self._get_out_filepath()))
+        log_message(str(self._get_out_filepath()))
 
     def _convert(self):
         self._create_out_dir()
@@ -201,13 +202,13 @@ class Downloader:
         if downloaded or args.pretend:
             self.db.add_downloaded(self.video.channel_name, self.video.id)
 
-    def _get_out_dir(self):
+    def _get_out_dir(self) -> str:
         return path.join(SERIES_DIR, self.collection_dir, self.video.channel_name, 'Season 01')
 
     def _create_out_dir(self):
         makedirs(self._get_out_dir(), exist_ok=True)
 
-    def _get_filename_safe(self):
+    def _get_filename_safe(self) -> str:
         # Replace : or | with -
         title = re.sub(r'[:\|]', ' -', self.video.title)
 
@@ -219,8 +220,7 @@ class Downloader:
 
         return title
 
-    def _get_out_filepath(self):
-        date_string = self.video.date[:10]
+    def _get_out_filepath(self) -> str:
         episode_number = self.db.get_next_episode_number(
             self.video.channel_name)
         out_filename = '{} - s01e{} - {}.mp4'.format(
@@ -237,7 +237,8 @@ channels = [
     Channel('Cubfan', 'UC9lJXqw4QZw-HWaZH6sN-xw', MINECRAFT_DIR),
     Channel('Xisuma', 'UCU9pX8hKcrx06XfOB-VQLdw', MINECRAFT_DIR,
             excludes=[r'Live Now', r'LIVE NOW']),
-    Channel('Keralis', 'UCcJgOennb0II4a_qi9OMkRA', MINECRAFT_DIR),
+    Channel('Keralis', 'UCcJgOennb0II4a_qi9OMkRA', MINECRAFT_DIR,
+            includes=[r'Hermitcraft']),
     Channel('Etho', 'UCFKDEp9si4RmHFWJW1vYsMA', MINECRAFT_DIR),
     Channel('Iskall', 'UCZ9x-z3iOnIbJxVpm1rsu2A', MINECRAFT_DIR),
     Channel('Logical Geek Boy', 'UCJx74HaacAjDZk8LPdOfUFQ', MINECRAFT_DIR),
