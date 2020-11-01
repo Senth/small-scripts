@@ -16,7 +16,7 @@ SERIES_DIR = '/mnt/lvm/series/'
 MINECRAFT_DIR = 'Minecraft'
 YOUTUBE_DIR = 'YouTube'
 MAX_DAYS_BACK = 3
-THREADS = 1
+THREADS = 2
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-v', '--verbose', action='store_true',
