@@ -11,8 +11,8 @@ NOTIFICATION_SOUND := "E:\ownCloud\Various\Sounds\Notification\dong.wav"
 
 ; In milliseconds
 IDLE_TIME := 60 * 1000
-BREAK_TIME := 3.5 * 60 * 1000
-; BREAK_TIME := 5 * 1000
+; BREAK_TIME := 3.5 * 60 * 1000
+BREAK_TIME := 5 * 1000
 BREAK_GAME_DELAY_TIME := 10 * 1000
 breakProgress := 0
 timeLeftLabel := 1
@@ -21,6 +21,12 @@ extraCategory := False
 extraAction := False
 
 FormatTime, currentDate,, yyyy-MM-dd HH:mm
+
+; Skip if scroll lock is turned on
+if (GetKeyState("ScrollLock","T") == 1) {
+	ExitApp
+}
+
 
 ; User has been active - activate overlay
 if (A_TimeIdlePhysical < IDLE_TIME && not isAnyGameWithoutBreakRunning() && not isActiveWindowFullscreen()) {
