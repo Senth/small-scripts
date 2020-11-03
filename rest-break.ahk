@@ -11,8 +11,8 @@ NOTIFICATION_SOUND := "E:\ownCloud\Various\Sounds\Notification\dong.wav"
 
 ; In milliseconds
 IDLE_TIME := 60 * 1000
-; BREAK_TIME := 3.5 * 60 * 1000
-BREAK_TIME := 5 * 1000
+BREAK_TIME := 3.5 * 60 * 1000
+; BREAK_TIME := 5 * 1000
 BREAK_GAME_DELAY_TIME := 10 * 1000
 breakProgress := 0
 timeLeftLabel := 1
