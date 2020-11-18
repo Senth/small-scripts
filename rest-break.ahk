@@ -5,9 +5,9 @@
 ; Name of games to disable this script for
 GAMES := []
 GAMES_WITH_DELAYED_BREAK := ["Minecraft ahk_class GLFW30"]
-ENERGY_LEVELS_FILE := "O:\ownCloud\Various\personal-data.csv"
+ENERGY_LEVELS_FILE := "O:\ownCloud\Archived\personal-data.csv"
 ICON_FOLDER := "E:\ownCloud\configs\.commands\assets\icons\"
-NOTIFICATION_SOUND := "E:\ownCloud\Various\Sounds\Notification\dong.wav"
+NOTIFICATION_SOUND := "E:\ownCloud\Archived\Sounds\Notification\dong.wav"
 
 ; In milliseconds
 IDLE_TIME := 60 * 1000
