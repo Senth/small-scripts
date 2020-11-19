@@ -1,136 +1,219 @@
 #!/usr/bin/python3
 from subprocess import run
 from os import path
-import fileinput
 import argparse
 import os
-import sys
 
 
-if not os.geteuid() == 0:
-    sys.exit("Only root can run this script")
+# if not os.geteuid() == 0:
+#     sys.exit("Only root can run this script")
 
-parser = argparse.ArgumentParser(description='Create a Letsencrypt apache vhost configuration for the specified domain')
-parser.add_argument('action', choices=['add', 'update'], help='If we want to generate a new TLS certificate and update domain locations, or update them')
-parser.add_argument('backend', choices=['apache', 'nodejs', 'other'], help='If the backend is apache or nodejs. Other means it forwards to another backend. You have to set --backend-port')
-parser.add_argument('domain_names', nargs='*', help='The domains to add or update the letsencrypt vhost for')
-parser.add_argument('--index', action='store_true', help='if the domain is indexable/browseable. Only applicable with the apache backend')
-parser.add_argument('--git', action='store_true', help='If the project is checked out, meaning we want the public_html to be stored at /var/www/my.domain.com/public_html')
-parser.add_argument('--backend-port', help='Port used for the backend. Required for nodejs and other backend. When --frontend-port is used the backend will be served at /api')
-parser.add_argument('--frontend-port', help='Port used for the frontend in nodejs. When this is specified the backend will be served at /api')
+parser = argparse.ArgumentParser(
+    description="Create a Letsencrypt apache vhost configuration for the specified domain"
+)
+parser.add_argument(
+    "action",
+    choices=["add", "update"],
+    help="If we want to generate a new TLS certificate and update domain locations, or update them",
+)
+parser.add_argument(
+    "domain_names",
+    nargs="*",
+    help="The domains to add or update the letsencrypt vhost for",
+)
+parser.add_argument(
+    "--frontend",
+    choices=["apache", "nginx", "proxy"],
+    help="The frontend of the webapplication. If proxy is specified you also need to specify a --frontend-port.",
+)
+parser.add_argument(
+    "--index",
+    action="store_true",
+    help="if the domain is indexable/browseable. Only applicable with the apache frontend",
+)
+parser.add_argument(
+    "--frontend-port",
+    help="Port used for the frontend in proxy.",
+)
+parser.add_argument(
+    "--backend-port",
+    help="Adds a backend with the specified port. The backend will be served at /api",
+)
 
 args = parser.parse_args()
 
-# Error handling for special argument cases
-# other || nodejs -> --backend-port
-if (args.backend == 'other' or args.backend == 'nodejs') and not args.backend_port:
-    parser.error("backend 'other' requires --backend-port.")
+if (args.frontend == "proxy") and not args.backend_port:
+    parser.error("frontend 'proxy' requires --frontend-port.")
 
 # automatically add --git if we use --frontend-port
 if args.frontend_port:
     args.git = True
 
-LETSENCRYPT_CONF_DIR = '/etc/letsencrypt/renewal/'
-LETSENCRYPT_WEBROOT = '/var/www/letsencrypt'
-WWW_DIR = '/var/www/'
-GIT_POSTFIX_DIR = 'public_html'
-APACHE_VHOSTS_DIR = '/etc/apache2/vhosts.d/'
-NGINX_VHOSTS_DIR = '/etc/nginx/sites-enabled/'
 
-# Default vhost configurations we copy from
-VHOST_DEFAULT = 'default_ssl_vhost'
-VHOST_APACHE_INDEX = 'default_ssl_index_dir'
-VHOST_NGINX_APACHE_BACKEND = 'template_apache_backend'
-VHOST_NGINX_BACKEND = 'template_backend'
-VHOST_NGINX_FRONT_AND_BACKEND = 'template_front_and_backend'
+def main():
+    for domain_name in args.domain_names:
+        domain = Domain(domain_name)
+        domain.update()
 
-# Configuration file variables to replace
-KEY_SERVER_NAME = '{SERVER_NAME}'
-KEY_WEBROOT_DIR = '{WEBROOT_DIR}'
-KEY_BACKEND_PORT = '{BACKEND_PORT}'
-KEY_FRONTEND_PORT = '{FRONTEND_PORT}'
+        if args.action == "add":
+            certbot = Certbot(domain_name=domain_name)
+            certbot.add()
+
+    # Reload configurations
+    Nginx.reload()
+    Apache.reload()
 
 
-def write_config(default_config, config_to_write, domain_name, webroot_dir):
-    # Replace {SERVER_NAME} with the actual server name in the file and save as a new file
-    with open(default_config, 'r') as fin:
-        with open(config_to_write, 'w') as fout:
-            for line in fin:
-                line = line.replace(KEY_SERVER_NAME, domain_name)
-                line = line.replace(KEY_WEBROOT_DIR, webroot_dir)
-                if args.backend_port:
-                    line = line.replace(KEY_BACKEND_PORT, args.backend_port)
-                if args.frontend_port:
-                    line = line.replace(KEY_FRONTEND_PORT, args.frontend_port)
-                fout.write(line)
-    os.chmod(config_to_write, 0o600)
+class Config:
+    www_dir = "/var/www/"
+
+    def __init__(self, domain_name: str, webroot: str) -> None:
+        self.domain_name = domain_name
+        self.webroot = webroot
+        self._conf = ""
+
+    def _update_confs(self) -> None:
+        self._conf = self._conf.replace("{SERVER_NAME}", self.domain_name)
+        self._conf = self._conf.replace("{WEBROOT}", self.webroot)
+
+    def _write_confs(self, vhosts_dir: str) -> None:
+        """Write configuration to file"""
+        conf_file_path = path.join(vhosts_dir, self.domain_name + ".conf")
+        with open(conf_file_path, "w") as file:
+            file.write(self._conf)
 
 
-def get_config_files(vhosts_dir, default_config, domain_name):
-    return (path.join(vhosts_dir, default_config), path.join(vhosts_dir, domain_name + '.conf'))
+class Nginx(Config):
+    vhosts_dir = "/etc/nginx/sites-enabled/"
+    template_base = path.join(vhosts_dir, "template_base")
+    frontend = path.join(vhosts_dir, "template_frontend_")
+    backend = path.join(vhosts_dir, "template_backend")
 
+    def __init__(self, domain_name: str, webroot: str) -> None:
+        super().__init__(domain_name, webroot)
+        self._frontend_conf = ""
+        self._backend_conf = ""
 
-def get_webroot_dir(domain_name):
-    webroot_dir = path.join(WWW_DIR, domain_name)
-    if args.git:
-        webroot_dir = path.join(webroot_dir, GIT_POSTFIX_DIR)
-    return webroot_dir
+    def update(self) -> None:
+        self._read_configs()
+        self._update_confs()
+        self._write_confs(Nginx.vhosts_dir)
 
+    def _read_configs(self) -> None:
+        """Read template configurations for this configuration"""
+        # Base config
+        with open(Nginx.template_base, "r") as file:
+            self._conf = file.read()
 
-def create_webroot_dir(webroot_dir):
-    os.makedirs(webroot_dir, exist_ok=True)
+        # Frontend
+        if args.frontend:
+            frontend = Nginx.frontend + args.frontend
+            with open(frontend, "r") as file:
+                self._frontend_conf = file.read()
 
+        # Backend
+        if args.backend_port:
+            with open(Nginx.backend, "r") as file:
+                self._backend_conf = file.read()
 
-def update_letsencrypt_conf_webroot(domain_name, webroot_dir):
-    conf_file = path.join(LETSENCRYPT_CONF_DIR, domain_name + '.conf')
-    for line in fileinput.input(conf_file, inplace=True):
-        if domain_name + ' = ' in line:
-            print("{} = {}\n".format(domain_name, webroot_dir), end='')
-        else:
-            print(line, end='')
-
-
-for domain_name in args.domain_names:
-    # Calculate webroot
-    webroot_dir = get_webroot_dir(domain_name)
-
-    # --- nginx configurationi ---
-    # Other
-    if args.backend == 'other':
-        in_conf = VHOST_NGINX_BACKEND
-    # Nodejs
-    elif args.backend == 'nodejs':
-        create_webroot_dir(webroot_dir)
+    def _update_confs(self) -> None:
+        """Update the configurations (but don't write)"""
+        # Frontend
         if args.frontend_port:
-            in_conf = VHOST_NGINX_FRONT_AND_BACKEND
-        else:
-            in_conf = VHOST_NGINX_BACKEND
-    # Apache
-    elif args.backend == 'apache':
-        create_webroot_dir(webroot_dir)
-        in_conf = VHOST_NGINX_APACHE_BACKEND
-    
-    (in_conf, out_conf) = get_config_files(NGINX_VHOSTS_DIR, in_conf, domain_name)
-    write_config(in_conf, out_conf, domain_name, webroot_dir)
+            self._frontend_conf = self._frontend_conf.replace(
+                "{FRONTEND_PORT}", args.frontend_port
+            )
+        self._conf = self._conf.replace("{FRONTEND}", self._frontend_conf)
 
-    # --- Apache configuration ---
-    if args.backend == 'apache':
+        # Backend
+        if args.backend_port:
+            self._backend_conf = self._backend_conf.replace(
+                "{BACKEND_PORT}", args.backend_port
+            )
+        self._conf = self._conf.replace("{BACKEND}", self._backend_conf)
+
+        # Update general settings
+        super()._update_confs()
+
+    @staticmethod
+    def reload() -> None:
+        run(["rc-service", "nginx", "reload"])
+
+
+class Apache(Config):
+    vhosts_dir = "/etc/apache2/vhosts.d/"
+    default = path.join(vhosts_dir, "default_ssl_vhost")
+    index = path.join(vhosts_dir, "default_ssl_index_dir")
+
+    def __init__(self, domain_name: str, webroot: str) -> None:
+        super().__init__(domain_name=domain_name, webroot=webroot)
+
+    def update(self) -> None:
+        self._read_confs()
+        self._update_confs()
+        self._write_confs(Nginx.vhosts_dir)
+
+    def _read_confs(self) -> None:
+        template_file_path = Apache.default
+
         if args.index:
-            (in_conf, out_conf) = get_config_files(APACHE_VHOSTS_DIR, VHOST_APACHE_INDEX, webroot_dir)
-        else:
-            (in_conf, out_conf) = get_config_files(APACHE_VHOSTS_DIR, VHOST_DEFAULT, domain_name)
-        write_config(in_conf, out_conf, domain_name, webroot_dir)
+            template_file_path = Apache.index
+        with open(template_file_path, "r") as file:
+            self._conf = file.read()
 
-    # Run the certbot configuration
-    if args.action == 'add':
-        run(['certbot', 'certonly', '--webroot', '-w', LETSENCRYPT_WEBROOT, '-d', domain_name])
-    # Update webroot for certbot
-    elif args.action == 'update' and not args.backend == 'other':
-        update_letsencrypt_conf_webroot(domain_name, webroot_dir)
+    @staticmethod
+    def reload() -> None:
+        if args.frontend == "apache":
+            run(["rc-service", "apache2", "reload"])
 
-# Reload nginx
-run(['rc-service', 'nginx', 'reload'])
 
-# Reload apache
-if args.backend == 'apache':
-    run(['rc-service', 'apache2', 'reload'])
+class Certbot:
+    conf_dir = "/etc/letsencrypt/renewal/"
+    webroot = "/var/www/letsencrypt"
+
+    def __init__(self, domain_name: str) -> None:
+        self.domain_name = domain_name
+
+    def add(self) -> None:
+        run(
+            [
+                "certbot",
+                "certonly",
+                "--webroot",
+                "-w",
+                Certbot.webroot,
+                "-d",
+                self.domain_name,
+            ]
+        )
+
+
+class Domain:
+    def __init__(self, name) -> None:
+        self.name = name
+        self._webroot = path.join(Config.www_dir, name)
+
+    def update(self) -> None:
+        """Update or add the domain if it doesn't exist"""
+
+        # Only create a webroot dir if necessary
+        if args.frontend != "proxy" or args.backend_port:
+            self._create_webroot_dir()
+
+        # Update confs
+        self._update_confs()
+
+    def _create_webroot_dir(self) -> None:
+        os.makedirs(self._webroot, exist_ok=True)
+
+    def _update_confs(self) -> None:
+        nginx = Nginx(self.name, self._webroot)
+        nginx.update()
+
+        # Apache
+        if args.frontend == "apache":
+            apache = Apache(self.name, self._webroot)
+            apache.update()
+
+
+main()
