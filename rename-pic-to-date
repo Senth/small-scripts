@@ -51,7 +51,7 @@ else:
 
         # If the file does not have a valid file extension
         # then skip it
-        if (file_ext not in valid_extensions):
+        if file_ext not in valid_extensions:
             continue
 
         # Create the old file path
@@ -67,9 +67,7 @@ else:
         image.close()
 
         # Reformat the date taken to "YYYYMMDD-HHmmss"
-        date_time = date_taken \
-            .replace(":", "")      \
-            .replace(" ", "-")
+        date_time = date_taken.replace(":", "").replace(" ", "-")
 
         # Combine the new file name and file extension
         new_file_name = date_time + file_ext

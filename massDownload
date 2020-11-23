@@ -6,10 +6,16 @@ import requests
 import re
 import os
 
-parser = argparse.ArgumentParser(description='Mass download the specified file types from the webpage(s). Works by getting the <a href="..."> from the html')
-parser.add_argument('--seperateDirs', help='Create seperate directories for each url', action='store_true')
-parser.add_argument('filetype', help='Filetype extension, e.g. mp3')
-parser.add_argument('urls', nargs='+', help='Url to download from')
+parser = argparse.ArgumentParser(
+    description='Mass download the specified file types from the webpage(s). Works by getting the <a href="..."> from the html'
+)
+parser.add_argument(
+    "--seperateDirs",
+    help="Create seperate directories for each url",
+    action="store_true",
+)
+parser.add_argument("filetype", help="Filetype extension, e.g. mp3")
+parser.add_argument("urls", nargs="+", help="Url to download from")
 
 args = parser.parse_args()
 
@@ -17,53 +23,58 @@ http = urllib3.PoolManager()
 
 DOWNLOAD_LINK_PATTERN = '<a.*href="(.*\.' + args.filetype + ')"'
 
+
 def getDownloadLinks(html):
-    links = re.findall(DOWNLOAD_LINK_PATTERN, html.decode('utf-8'))
+    links = re.findall(DOWNLOAD_LINK_PATTERN, html.decode("utf-8"))
     links = set(links)
-    print('Found ' + str(len(links)) + ' links')
+    print("Found " + str(len(links)) + " links")
     return links
 
+
 def getRealDownloadLink(html):
-    matches = re.search(DOWNLOAD_LINK_PATTERN, html.decode('utf-8'))
+    matches = re.search(DOWNLOAD_LINK_PATTERN, html.decode("utf-8"))
     return matches.group(1)
+
 
 def getDirFromUrl(url):
     # Get last part of url
-    matches = re.search('([^\/]+)$', url)
+    matches = re.search("([^\/]+)$", url)
     dirName = matches.group(1)
     # Remove everything after #? if they exist
-    matches = re.search('(^[^#?]+)', dirName)
+    matches = re.search("(^[^#?]+)", dirName)
     if not matches is None:
         dirName = matches.group(1)
     return dirName
+
 
 def createDir(dir):
     if args.seperateDirs:
         os.makedirs(dir, exist_ok=True)
 
+
 def downloadFile(downloadUrl, dir):
-    matches = re.search('([^\/]+)$', downloadUrl)
+    matches = re.search("([^\/]+)$", downloadUrl)
     fileName = matches.group(1)
     if args.seperateDirs:
         fileName = os.path.join(dir, fileName)
     response = requests.get(downloadUrl)
-    
+
     # Is actually an HTML document not the filetype, search again for the file in the HTML
-    if response.headers['content-type'].startswith('text/html'):
+    if response.headers["content-type"].startswith("text/html"):
         downloadUrl = getRealDownloadLink(response.content)
         response = requests.get(downloadUrl)
-    
-    print('Downloading ' + downloadUrl + ' ---> ' + fileName)
+
+    print("Downloading " + downloadUrl + " ---> " + fileName)
 
     # Save to file
-    file = open(fileName, 'wb')
+    file = open(fileName, "wb")
     file.write(response.content)
     file.close()
-        
+
 
 for url in args.urls:
-    response = http.request('GET', url)
-    downloadLinks = getDownloadLinks(response.data);
+    response = http.request("GET", url)
+    downloadLinks = getDownloadLinks(response.data)
     dir = getDirFromUrl(url)
     createDir(dir)
     for link in downloadLinks:

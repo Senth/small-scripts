@@ -6,7 +6,11 @@ from subprocess import call
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
-    '-d', '--dir', default='.', help='Search in the supplied directory instead of current directory')
+    "-d",
+    "--dir",
+    default=".",
+    help="Search in the supplied directory instead of current directory",
+)
 args = parser.parse_args()
 
 
@@ -27,8 +31,7 @@ for filename in os.listdir(args.dir):
         file_found = True
         next_file_number = 2
         while file_found:
-            next_file = full_path(
-                basename + '-' + str(next_file_number) + '.pdf')
+            next_file = full_path(basename + "-" + str(next_file_number) + ".pdf")
             if os.path.isfile(next_file):
                 files_to_combine.append(next_file)
                 next_file_number += 1
@@ -38,10 +41,10 @@ for filename in os.listdir(args.dir):
         # Convert if we have more than one file to convert
         if len(files_to_combine) > 1:
             print("Found more than one file -> Combining")
-            out_file = full_path(basename + '.pdf')
-            command = ['pdftk']
+            out_file = full_path(basename + ".pdf")
+            command = ["pdftk"]
             command.extend(files_to_combine)
-            command.extend(['cat', 'output', out_file])
+            command.extend(["cat", "output", out_file])
             print("Full command: " + str(command))
             call(command)
 

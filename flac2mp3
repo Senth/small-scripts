@@ -9,23 +9,34 @@ import psutil
 
 # Args setup
 parser = argparse.ArgumentParser()
-parser.add_argument('input', nargs='+', help='At least one flac file')
-parser.add_argument('-o', '--output', help='Output file as mp3, or a folder if multiple input files (flac) were used', default='')
+parser.add_argument("input", nargs="+", help="At least one flac file")
+parser.add_argument(
+    "-o",
+    "--output",
+    help="Output file as mp3, or a folder if multiple input files (flac) were used",
+    default="",
+)
 
 replaceKeepGroup = parser.add_mutually_exclusive_group()
-replaceKeepGroup.add_argument('-y', '--replace', help='Overwrite existing files', action='store_true')
-replaceKeepGroup.add_argument('-n', '--keep', help='Keep existing files', action='store_true')
+replaceKeepGroup.add_argument(
+    "-y", "--replace", help="Overwrite existing files", action="store_true"
+)
+replaceKeepGroup.add_argument(
+    "-n", "--keep", help="Keep existing files", action="store_true"
+)
 
-def error(message=''):
+
+def error(message=""):
     if message:
-        print(message + '\n')
+        print(message + "\n")
     parser.print_help()
     sys.exit(0)
 
+
 # Convert a FLAC file
-def convert(inFile : str, outName : str):
+def convert(inFile: str, outName: str):
     # Get basename
-    if inFile.endswith('.flac'):
+    if inFile.endswith(".flac"):
         basename = inFile[:-5]
     else:
         return
@@ -33,26 +44,38 @@ def convert(inFile : str, outName : str):
     # Output is current or another directory -> Add filename
     if not outName or os.path.isdir(outName):
         outFile = outName
-        if outName and not outName.endswith('/'):
-            outFile += '/'
-        outFile += basename + '.mp3'
+        if outName and not outName.endswith("/"):
+            outFile += "/"
+        outFile += basename + ".mp3"
     else:
         outFile = outName
 
-    print('Converting ' + inFile + ' -> ' + outFile)
+    print("Converting " + inFile + " -> " + outFile)
 
-    callList=['ffmpeg', '-i', inFile, '-ab', '320k', '-map_metadata', '0', '-id3v2_version', '3', outFile]
+    callList = [
+        "ffmpeg",
+        "-i",
+        inFile,
+        "-ab",
+        "320k",
+        "-map_metadata",
+        "0",
+        "-id3v2_version",
+        "3",
+        outFile,
+    ]
 
     # Add extra arguments
     # Replace all
     if args.replace:
-        callList.insert(1, '-y')
+        callList.insert(1, "-y")
     # Keep
     if args.keep:
-        callList.insert(1, '-n')
+        callList.insert(1, "-n")
 
-    FNULL = open(os.devnull, 'w')
+    FNULL = open(os.devnull, "w")
     subprocess.call(callList, stdout=FNULL, stderr=subprocess.STDOUT)
+
 
 # Parse
 try:
@@ -67,8 +90,8 @@ if args.output:
         # OUTPUT has to be a directory OR (doesn't exists AND not end in .mp3)
         if not os.path.isdir(args.output):
             # Error -> Is a file
-            if os.path.exists(args.output) or args.output.endswith('.mp3'):
-                error('OUTPUT needs to be a directory when using multiple INPUT files')
+            if os.path.exists(args.output) or args.output.endswith(".mp3"):
+                error("OUTPUT needs to be a directory when using multiple INPUT files")
             # Create directory
             else:
                 os.makedirs(args.output)
@@ -77,16 +100,14 @@ if args.output:
         # Check if the file doesn't exist
         if not os.path.exists(args.output):
             # Create dir if it's a dir
-            if not args.output.endswith('.mp3'):
+            if not args.output.endswith(".mp3"):
                 os.makedirs(args.output)
-
-
 
 
 # Iterate
 if len(args.input) > 0:
-    activeThreads=[]
-    cores=psutil.cpu_count()
+    activeThreads = []
+    cores = psutil.cpu_count()
     for name in args.input:
         thread = threading.Thread(target=convert, args=(name, args.output))
 

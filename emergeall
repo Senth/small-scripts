@@ -3,11 +3,21 @@
 import argparse
 import subprocess
 
-parser = argparse.ArgumentParser(description='Search and emerge all packages matching the pattern')
-parser.add_argument('searchString', help='Search for packages containing this string (regexp)')
-parser.add_argument('-p', '--pretend', action='store_true', help='will use emerge --pretend')
-parser.add_argument('--stable', action='store_true', help='Match packages with a stable version')
-parser.add_argument('--new', action='store_true', help="Match packages that haven't been installed")
+parser = argparse.ArgumentParser(
+    description="Search and emerge all packages matching the pattern"
+)
+parser.add_argument(
+    "searchString", help="Search for packages containing this string (regexp)"
+)
+parser.add_argument(
+    "-p", "--pretend", action="store_true", help="will use emerge --pretend"
+)
+parser.add_argument(
+    "--stable", action="store_true", help="Match packages with a stable version"
+)
+parser.add_argument(
+    "--new", action="store_true", help="Match packages that haven't been installed"
+)
 
 args = parser.parse_args()
 searchString = args.searchString
@@ -16,27 +26,28 @@ searchString = args.searchString
 def getMatches(eixCommand):
     matches = subprocess.check_output(eixCommand)
     if matches:
-        matches = matches.decode('utf-8')
-        matches = matches.split('\n')
-        matches.remove('')
+        matches = matches.decode("utf-8")
+        matches = matches.split("\n")
+        matches.remove("")
         return matches
     else:
         return False
 
+
 # Eix
-eixCommand = ['eix', '--pure-packages', '--only-names']
+eixCommand = ["eix", "--pure-packages", "--only-names"]
 if args.stable:
-    eixCommand.append('--stable')
-eixCommand.extend(['-A', searchString])
+    eixCommand.append("--stable")
+eixCommand.extend(["-A", searchString])
 matches = getMatches(eixCommand)
 
 if not matches:
-    print('No matches found')
+    print("No matches found")
     exit
 
 # Only new
 if args.new:
-    eixCommand.insert(1, '-I')
+    eixCommand.insert(1, "-I")
     installedMatches = getMatches(eixCommand)
 
     # Remove installed
@@ -45,9 +56,9 @@ if args.new:
 
 
 # Emerge
-emergeCommand = ['sudo', 'emerge', '-av']
+emergeCommand = ["sudo", "emerge", "-av"]
 if args.pretend:
-    emergeCommand.append('--pretend')
+    emergeCommand.append("--pretend")
 emergeCommand.extend(matches)
 
 subprocess.call(emergeCommand)

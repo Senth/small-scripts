@@ -5,9 +5,10 @@ import re
 import shutil
 import os
 
-FIND_COMMAND=['find', '/etc', '/usr/share/X11', '-iname', '._cfg*']
+FIND_COMMAND = ["find", "/etc", "/usr/share/X11", "-iname", "._cfg*"]
 
-BACKUP_FOLDER='/var/tmp/portage/'
+BACKUP_FOLDER = "/var/tmp/portage/"
+
 
 def moveToBackup(oldFile):
     if os.path.exists(oldFile):
@@ -17,27 +18,30 @@ def moveToBackup(oldFile):
             os.remove(backupFilename)
         shutil.move(oldFile, backupFilename)
 
+
 # Find files
 found = subprocess.check_output(FIND_COMMAND)
 for new in iter(found.splitlines()):
-    new=new.decode('UTF-8')
+    new = new.decode("UTF-8")
     # Get old file
     old = re.sub(r"._cfg\d+_", "", new)
 
-    print (new + "    " + old)
-    subprocess.call(['colordiff', old, new])
+    print(new + "    " + old)
+    subprocess.call(["colordiff", old, new])
 
-    answer = input("What do you want to do?\n[ENTER]\tnothing (default)\nR\treplace\nO\tedit old\nN\tedit new\nK\tkeep old conf\n").lower()
+    answer = input(
+        "What do you want to do?\n[ENTER]\tnothing (default)\nR\treplace\nO\tedit old\nN\tedit new\nK\tkeep old conf\n"
+    ).lower()
 
-    if answer == 'r':
+    if answer == "r":
         moveToBackup(old)
         shutil.move(new, old)
-    elif answer == 'o':
-        subprocess.call(['vim', '-o2', old, new])
+    elif answer == "o":
+        subprocess.call(["vim", "-o2", old, new])
         moveToBackup(new)
-    elif answer == 'n':
-        subprocess.call(['vim', '-o2', old, new])
+    elif answer == "n":
+        subprocess.call(["vim", "-o2", old, new])
         moveToBackup(old)
         shutil.move(new, old)
-    elif answer == 'k':
+    elif answer == "k":
         moveToBackup(new)

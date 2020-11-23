@@ -7,12 +7,16 @@ from subprocess import call
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument('-d', '--dir', default='.',
-                    help='Where to (recursively) look for images and convert them into a single PDF.')
+parser.add_argument(
+    "-d",
+    "--dir",
+    default=".",
+    help="Where to (recursively) look for images and convert them into a single PDF.",
+)
 
 args = parser.parse_args()
 
-IMAGE_TYPES = ['.jpg', '.jpeg', '.png', '.gif', '.bmp']
+IMAGE_TYPES = [".jpg", ".jpeg", ".png", ".gif", ".bmp"]
 
 
 def full_path(filename: str):
@@ -27,7 +31,7 @@ def is_image(filename: str):
 
 
 def convert_to_pdf(images: list, out_file):
-    command = ['convert']
+    command = ["convert"]
     command.extend(images)
     command.append(out_file)
     call(command)
@@ -45,5 +49,5 @@ for outer_dir in os.listdir(args.dir):
 
         if len(images) > 0:
             images.sort()
-            out_file = full_path(outer_dir + '.pdf')
+            out_file = full_path(outer_dir + ".pdf")
             convert_to_pdf(images, out_file)
