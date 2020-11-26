@@ -43,7 +43,7 @@ for show in shows:
         file_input = input_dir.joinpath(filepath)
         temp_file_output = tmp_dir.joinpath(basename)
 
-        log("Found file: {} ————> Title: {}".format(basename, title))
+        log(f"Found file: {basename} ————> Title: {title}")
 
         # Metadata ffmpeg conversion
         if not args.pretend:
@@ -57,7 +57,7 @@ for show in shows:
                         "-c",
                         "copy",
                         "-metadata",
-                        "title={}".format(title),
+                        f"title={title}",
                         temp_file_output,
                     ]
                 ).returncode
@@ -74,10 +74,16 @@ log("")
 # Move files to Plex location
 for show in shows:
     for filepath in new_files[show]:
-        temp_file = tmp_dir.joinpath(filepath)
-        out_file = plex_dir.joinpath(show, "Season 01", filepath)
+        # Get season
+        match = re.search(r"s(\d{2})e\d+", filepath)
+        if match:
+            season_number = match.group(1)
+            temp_file = tmp_dir.joinpath(filepath)
+            out_file = plex_dir.joinpath(show, f"Season {season_number}", filepath)
 
-        log("Move {} ————> {}".format(temp_file, out_file))
+            log(f"Move {temp_file} ————> {out_file}")
 
-        if not args.pretend:
-            move(str(temp_file), str(out_file))
+            if not args.pretend:
+                move(str(temp_file), str(out_file))
+        else:
+            print(f"Could not find season in file {filepath}")
