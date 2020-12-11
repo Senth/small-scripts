@@ -42,7 +42,7 @@ parser.add_argument(
 
 args = parser.parse_args()
 
-if (args.frontend == "proxy") and not args.backend_port:
+if (args.frontend == "proxy") and not args.frontend_port:
     parser.error("frontend 'proxy' requires --frontend-port.")
 
 # automatically add --git if we use --frontend-port
