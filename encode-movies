@@ -1,15 +1,13 @@
 #!/bin/bash
 
 DIR="/home/senth/ownCloud/temp/encode_movies"
-FREJA_IN="freja"
-FREJA_OUT="/home/senth/ownCloud/Freja & Matteus/Matteus filmer"
 SARA_IN="sara"
-SARA_OUT="/home/senth/ownCloud/Sara & Matteus/Matteus filmer"
+SARA_OUT="${DIR}/encoded"
 EMMA_IN="emma"
-EMMA_OUT="/home/senth/ownCloud/temp/encode_movies/Emma encoded movies"
+EMMA_OUT="${DIR}/Emma encoded movies"
 VIDEOS_IN="videos"
 VIDEOS_OUT="/home/senth/ownCloud/Camera Uploads/Videos"
-DONE_OUT="${DIR}/DONE"
+DONE_OUT="${DIR}/original"
 
 cd "$DIR"
 
@@ -47,7 +45,7 @@ encode_file() {
 		outtemp="/tmp/$filename.mp4"
 		outfile="$out_dir/$filename.mp4"
 
-		ffmpeg -i "$file" -vcodec $codec -crf $crf "$outtemp"
+		ffmpeg -threads 8 -i "$file" -vcodec $codec -crf $crf "$outtemp"
 
 		# Keep record date for file
 		touch -r "$file" "$outtemp"
@@ -59,23 +57,15 @@ encode_file() {
 	fi
 }
 
-# Skip certain files if on the server
-if [ "$COMPUTER" -ne "" ]; then
-	# Sara Movies
-	for file in $SARA_IN/*.mp4; do
-		encode_file "$file" "$SARA_OUT"
-	done
+# Sara Movies
+for file in $SARA_IN/*.mp4; do
+	encode_file "$file" "$SARA_OUT"
+done
 
-	# Freja Movies
-	for file in $FREJA_IN/*.mp4; do
-		encode_file "$file" "$FREJA_OUT"
-	done
-
-	# Camera Uploads
-	for file in $VIDEOS_IN/*.mp4; do
-		encode_file "$file" "$VIDEOS_OUT"
-	done
-fi
+# Camera Uploads
+for file in $VIDEOS_IN/*.mp4; do
+	encode_file "$file" "$VIDEOS_OUT"
+done
 
 # Emma Movies
 for file in $EMMA_IN/*; do
