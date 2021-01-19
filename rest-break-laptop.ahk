@@ -11,7 +11,7 @@ ICON_FOLDER := OWNCLOUD_DIR . ".commands\assets\icons\"
 NOTIFICATION_SOUND := OWNCLOUD_DIR . "Archived\Sounds\Notification\dong.wav"
 
 BREAK_TIME := 3.5 * 60 * 1000
-;BREAK_TIME := 5 * 1000
+; BREAK_TIME := 5 * 1000
 BREAK_GAME_DELAY_TIME := 10 * 1000
 breakProgress := 0
 timeLeftLabel := 1
@@ -123,30 +123,45 @@ createAndShowOverlay() {
 	SysGet, SCREEN_X, 76
 	SysGet, SCREEN_Y, 77
 
-	; Create GUI
-	; Location
-	ELEMENT_WIDTH := 500
-	ELEMENT_X := SCREEN_WIDTH / 2 - ELEMENT_WIDTH / 2
-	PROGRESS_HEIGHT := 50
-	PROGRESS_Y := SCREEN_HEIGHT / 2 - PROGRESS_HEIGHT / 2
-	ELEMENT_Y_OFFSET := 200
+	xCenter := SCREEN_WIDTH / 2
+	yCenter := SCREEN_HEIGHT / 2
+	progressWidth := 500
+	progressHeight := 50
 
+	; Location of elements depending on screen size
+	; (Only laptop)
+	if (SCREEN_WIDTH == 1920) {
+		elementOffsetY := 150
+		progressY := yCenter - progressHeight - SCREEN_HEIGHT / 6
+		energyY := yCenter - progressHeight + SCREEN_HEIGHT / 6
+		energyX := xCenter
+	} else if (SCREEN_WIDTH == 7680) {
+		elementOffsetY := 200
+		monitorWidth := SCREEN_WIDTH / 3
+		progressY := yCenter - progressHeight
+		energyY := progressY - elementOffsetY
+		energyX := xCenter + monitorWidth
+	}
+
+	progressX := xCenter - progressWidth / 2
+	progressHeaderY := progressY - elementOffsetY
+	progressTimeLeftY := progressY + elementOffsetY
+
+	; Create GUI
 	; Time for a break text box
-	y := PROGRESS_Y - ELEMENT_Y_OFFSET
 	Gui, Font, s42, Roboto
-	Gui, Add, Text, C64b5f6 X%ELEMENT_X% Y%y% W%ELEMENT_WIDTH% Center, Time for a break :D
+	Gui, Add, Text, C64b5f6 X%progressX% Y%progressHeaderY% W%progressWidth% Center, Time for a break :D
 
 	; Progress Bar
-	Gui, Add, Progress, X%ELEMENT_X% Y%PROGRESS_Y% W%ELEMENT_WIDTH% H%PROGRESS_HEIGHT% C64b5f6 vbreakProgress
+	Gui, Add, Progress, X%progressX% Y%progressY% W%progressWidth% H%progressHeight% C64b5f6 vbreakProgress
 	GuiControl,, breakProgress, 100
 
 	; Time left
-	y := PROGRESS_Y + ELEMENT_Y_OFFSET
-	Gui, Add, Text, C64b5f6 X%ELEMENT_X% Y%y% W%ELEMENT_WIDTH% Center VtimeLeftLabel, X:XX
+	Gui, Add, Text, C64b5f6 X%progressX% Y%progressTimeLeftY% W%progressWidth% Center VtimeLeftLabel, X:XX
 
-	createEnergyLevelButtons(PROGRESS_Y - ELEMENT_Y_OFFSET)
+	createEnergyLevelButtons(energyX, energyY, elementOffsetY)
 
-	; The window
+	; Transparent window overlay
 	Gui, Color, 0,0                           ; Black
 	Gui, -Caption +ToolWindow ;+E0x20          ; No title bar, No taskbar button, Transparent for clicks
 	Gui, Show, X%SCREEN_X% Y%SCREEN_Y% W%SCREEN_WIDTH% H%SCREEN_HEIGHT% ; Show semi-transparent cover window
@@ -156,27 +171,17 @@ createAndShowOverlay() {
 	WinSet Transparent,220,ahk_id %ID%       ; Set transparency
 }
 
-createEnergyLevelButtons(label_y) {
-	; Get screen information
-	SysGet, SCREEN_WIDTH, 78
-	SysGet, SCREEN_HEIGHT, 79
-	SysGet, SCREEN_X, 76
-	SysGet, SCREEN_Y, 77
-
-	; Calculate center of third monitor
-	CENTER_Y := SCREEN_HEIGHT / 2
-	MONITOR_WIDTH := SCREEN_WIDTH / 3
-	CENTER_X := MONITOR_WIDTH * 2 + MONITOR_WIDTH / 2
-	LABEL_WIDTH := 1000
-	LABEL_X := CENTER_X - LABEL_WIDTH / 2
+createEnergyLevelButtons(xCenter, energyY, elementOffsetY) {
+	labelWidth := 1000
+	energyX := xCenter - labelWidth / 2
 
 	; Add label "What's your current energy level?"
-	Gui, Add, Text, Center C64b5f6 X%LABEL_X% Y%label_y% W%LABEL_WIDTH%, What is your current energy level?
+	Gui, Add, Text, Center C64b5f6 X%energyX% Y%energyY% W%labelWidth%, What is your current energy level?
 
 	; Energy buttons
 	COLORS := [ "b71c1c", "C95024", "DB842C", "EDB733", "FFEB3B", "E4EF30", "C8F325",	"ADF719",	"91FB0E",	"76FF03" ]
 	Loop, 10 {
-		addButton(A_Index, COLORS, CENTER_X, CENTER_Y)
+		addButton(A_Index, COLORS, xCenter, energyY + elementOffsetY)
 	}
 
 	; Extra activity icons
@@ -190,13 +195,13 @@ createEnergyLevelButtons(label_y) {
 }
 
 addButton(index, colors, xCenter, yCenter) {
-	BUTTON_WIDTH := 65
-	BUTTON_HEIGHT := 100
-	xStart := xCenter - (BUTTON_WIDTH * 10 + BUTTON_WIDTH / 2 * 9) / 2
-	buttonX := xStart + (index - 1) * BUTTON_WIDTH * 1.5
-	buttonY := yCenter - BUTTON_HEIGHT / 2
+	buttonWidth := 65
+	buttonHeight := 100
+	xStart := xCenter - (buttonWidth * 10 + buttonWidth / 2 * 9) / 2
+	buttonX := xStart + (index - 1) * buttonWidth * 1.5
+	buttonY := yCenter - buttonHeight / 2
 	color := colors[index]
-	Gui, Add, Text, Center C%color% X%buttonX% Y%buttonY% W%BUTTON_WIDTH% H%BUTTON_HEIGHT% GenergyButton%index%Pressed, %index%
+	Gui, Add, Text, Center C%color% X%buttonX% Y%buttonY% W%buttonWidth% H%buttonHeight% GenergyButton%index%Pressed, %index%
 }
 
 addIcon(index, labelName, fileName, xCenter, yCenter) {
