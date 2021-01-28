@@ -7,8 +7,8 @@ GAMES := []
 GAMES_WITH_DELAYED_BREAK := ["Minecraft ahk_class GLFW30"]
 OWNCLOUD_DIR := "C:\Users\matmag\ownCloud\"
 PERSONAL_DATA_FILE := OWNCLOUD_DIR . "configs\personal-data.csv"
-ICON_FOLDER := OWNCLOUD_DIR . ".commands\assets\icons\"
-NOTIFICATION_SOUND := OWNCLOUD_DIR . "Archived\Sounds\Notification\dong.wav"
+ICON_FOLDER := OWNCLOUD_DIR . "configs\.commands\assets\icons\"
+NOTIFICATION_SOUND := OWNCLOUD_DIR . "Dev\Notification\dong.wav"
 
 BREAK_TIME := 3.5 * 60 * 1000
 ; BREAK_TIME := 5 * 1000
@@ -133,7 +133,7 @@ createAndShowOverlay() {
 	if (SCREEN_WIDTH == 1920) {
 		elementOffsetY := 150
 		progressY := yCenter - progressHeight - SCREEN_HEIGHT / 6
-		energyY := yCenter - progressHeight + SCREEN_HEIGHT / 6
+		energyY := progressY + elementOffsetY * 2
 		energyX := xCenter
 	} else if (SCREEN_WIDTH == 7680) {
 		elementOffsetY := 200
@@ -184,14 +184,16 @@ createEnergyLevelButtons(xCenter, energyY, elementOffsetY) {
 		addButton(A_Index, COLORS, xCenter, energyY + elementOffsetY)
 	}
 
+	iconY := energyY + elementOffsetY * 1.5
+
 	; Extra activity icons
-	; addIcon(1, "shortWorkout", "fitness_white.png", CENTER_X, CENTER_Y)
-	; addIcon(2, "foodBreakfast", "beverage_white.png", CENTER_X, CENTER_Y)
-	; addIcon(3, "foodLunch", "bento_white.png", CENTER_X, CENTER_Y)
-	; addIcon(4, "foodDinner", "dinner_white.png", CENTER_X, CENTER_Y)
-	; addIcon(5, "foodHealthySnack", "eco_white.png", CENTER_X, CENTER_Y)
-	; addIcon(6, "foodSnack", "fastfood_white.png", CENTER_X, CENTER_Y)
-	; addIcon(7, "foodEveningSnack", "bedtime_white.png", CENTER_X, CENTER_Y)
+	addIcon(1, "shortWorkout", "fitness_white.png", xCenter, iconY, elementOffsetY)
+	addIcon(2, "foodBreakfast", "beverage_white.png", xCenter, iconY, elementOffsetY)
+	addIcon(3, "foodLunch", "bento_white.png", xCenter, iconY, elementOffsetY)
+	addIcon(4, "foodDinner", "dinner_white.png", xCenter, iconY, elementOffsetY)
+	addIcon(5, "foodHealthySnack", "eco_white.png", xCenter, iconY, elementOffsetY)
+	addIcon(6, "foodSnack", "fastfood_white.png", xCenter, iconY, elementOffsetY)
+	addIcon(7, "foodEveningSnack", "bedtime_white.png", xCenter, iconY, elementOffsetY)
 }
 
 addButton(index, colors, xCenter, yCenter) {
@@ -204,15 +206,14 @@ addButton(index, colors, xCenter, yCenter) {
 	Gui, Add, Text, Center C%color% X%buttonX% Y%buttonY% W%buttonWidth% H%buttonHeight% GenergyButton%index%Pressed, %index%
 }
 
-addIcon(index, labelName, fileName, xCenter, yCenter) {
+addIcon(index, labelName, fileName, xCenter, iconY, elementOffsetY) {
 	global ICON_FOLDER
 	filePath := ICON_FOLDER . fileName
 
-	ICON_WIDTH := 200
-	ICONS := 7
-	iconY := yCenter + 200
-	xStart := xCenter - (ICON_WIDTH * (ICONS - 0.5)) / 2
-	iconX := xStart + (index - 1) * ICON_WIDTH
+	iconWidth := elementOffsetY
+	iconCount := 7
+	xStart := xCenter - (iconWidth * (iconCount - 0.5)) / 2
+	iconX := xStart + (index - 1) * iconWidth
 	; Gui, Add, Text, CWhite X%iconX% Y%iconY%, %labelName%
 	; MsgBox, , Location, %filePath%, 4
 	Gui, Add, Picture, X%iconX% Y%iconY% G%labelName%, %filePath%
