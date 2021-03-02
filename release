@@ -1,0 +1,51 @@
+#!/bin/bash
+
+print_usage_and_exit() {
+  echo "Requires one parameter. Will tag this repo and all submodules as well"
+  echo "usage: release [major|minor|bugfix]"
+  exit 1
+}
+
+if [ $# != 1 ]; then
+  print_usage_and_exit
+elif ! [[ "$1" == "major" || "$1" == "minor" || "$1" == "bugfix" ]]; then
+  print_usage_and_exit
+fi
+
+type=$1
+
+git fetch
+
+current_version=`git tag | sed 's/^\(v?.*\)/\1/' | sort -V | tail -1`
+if [[ "$current_version" =~ (v?)([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
+  v_prefix=${BASH_REMATCH[1]}
+  next_major=${BASH_REMATCH[2]}
+  next_minor=${BASH_REMATCH[3]}
+  next_bugfix=${BASH_REMATCH[4]}
+else 
+  echo "Unable to parse $current_version"
+  exit 1
+fi
+
+
+# Create next version
+if [ "$type" = "major" ]; then
+  next_major=$((next_major + 1))
+  next_minor=0
+  next_bugfix=0
+elif [ "$type" = "minor" ]; then
+  next_minor=$((next_minor + 1))
+  next_bugfix=0
+elif [ "$type" = "bugfix" ]; then
+  next_bugfix=$((next_bugfix + 1))
+fi
+next_version=$v_prefix$next_major.$next_minor.$next_bugfix
+
+echo "$current_version -> $next_version"
+
+# Tag with new version
+git checkout main
+git pull
+git tag "v$next_version"
+git push --tags
+git remote prune origin
