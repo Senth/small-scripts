@@ -1,0 +1,18 @@
+#!/usr/bin/python
+
+from pathlib import Path
+import zipfile
+
+# Remove old
+zip_path = Path("/var/www/minecraft.senth.org-files/mods.zip")
+zip_path.unlink(missing_ok=True)
+
+# Zip new mods
+mods_dir = Path("/home/senth/ownCloud/Minecraft/client-mods/fabric")
+zip = zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED)
+
+for mod in mods_dir.glob("*"):
+    archive_name = Path("mods").joinpath(mod.name)
+    zip.write(filename=mod, arcname=archive_name)
+
+zip.close()
