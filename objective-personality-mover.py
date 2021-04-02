@@ -2,6 +2,7 @@
 from pathlib import Path
 from shutil import move
 from subprocess import run
+from os import makedirs
 import argparse
 import re
 
@@ -79,7 +80,12 @@ for show in shows:
         if match:
             season_number = match.group(1)
             temp_file = tmp_dir.joinpath(filepath)
-            out_file = plex_dir.joinpath(show, f"Season {season_number}", filepath)
+            out_dir = plex_dir.joinpath(show, f"Season {season_number}")
+
+            # Create out dirs if they don't exist
+            makedirs(out_dir, exist_ok=True)
+
+            out_file = out_dir.joinpath(filepath)
 
             log(f"Move {temp_file} ————> {out_file}")
 
