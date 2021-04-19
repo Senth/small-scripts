@@ -3,7 +3,7 @@
 ; Note that it will check if the user was active the last minute to run a rest break
 
 ; Name of games to disable this script for
-APPS_WITH_BREAK := ["Slack | Slack call ahk_exe Slack.exe"]
+APPS_WITH_BREAK := ["Slack \\| Slack call"]
 GAMES_WITH_DELAYED_BREAK := ["Minecraft ahk_class GLFW30"]
 OWNCLOUD_DIR := "C:\Users\matmag\ownCloud\"
 PERSONAL_DATA_FILE := OWNCLOUD_DIR . "configs\personal-data.csv"
@@ -11,7 +11,7 @@ ICON_FOLDER := OWNCLOUD_DIR . "configs\.commands\assets\icons\"
 NOTIFICATION_SOUND := OWNCLOUD_DIR . "Dev\Notification\dong.wav"
 
 BREAK_TIME := 3.5 * 60 * 1000
-BREAK_TIME := 10 * 1000
+; BREAK_TIME := 10 * 1000
 BREAK_GAME_DELAY_TIME := 10 * 1000
 breakProgress := 0
 timeLeftLabel := 1
