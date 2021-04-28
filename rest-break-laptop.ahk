@@ -33,8 +33,7 @@ main() {
 	global extraCategory
 	global extraAction
 
-	; Activate overlay
-	if (isPauseTime() && isPauseEnabled() && not isAnyAppWithoutBreakRunning()) {
+	if (shouldActivate()) {
 		startTime := A_TickCount
 		endTime := startTime + BREAK_TIME
 
@@ -50,6 +49,13 @@ main() {
 		SetTimer, updateProgressBar, 500
 		FormatTime, currentDate,, yyyy-MM-dd HH:mm
 	}
+}
+
+shouldActivate() {
+	return isPauseEnabled() 
+		and isPauseTime() 
+		and not isAnyAppWithoutBreakRunning()
+		and not isActiveWindowFullscreen()
 }
 
 isPauseEnabled() {
