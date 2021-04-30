@@ -44,8 +44,5 @@ next_version=$v_prefix$next_major.$next_minor.$next_bugfix
 echo "$current_version -> $next_version"
 
 # Tag with new version
-git checkout main
-git pull
-git tag "$next_version"
-git push --tags
-git remote prune origin
+git checkout main && git pull && git tag "$next_version" && git push --tags
+# git remote prune origin
