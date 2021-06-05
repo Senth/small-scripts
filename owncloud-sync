@@ -1,0 +1,79 @@
+#!/usr/bin/python3
+
+import argparse
+import configparser
+from pathlib import Path
+from subprocess import run
+from sys import exit
+from typing import Any
+
+HOME_DIR = Path.home()
+CONFIG_FILE = HOME_DIR.joinpath(".owncloud-sync-config")
+EXCLUDE_FILE = HOME_DIR.joinpath(".owncloud-exclude-list")
+OWNCLOUD_DIR = HOME_DIR.joinpath("ownCloud")
+OWNCLOUD_URL = "https://owncloud.senth.org"
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--user", help=f"Username, if none is specified reads {CONFIG_FILE}")
+parser.add_argument("--password", help=f"Password if none is specified reads {CONFIG_FILE}")
+args = parser.parse_args()
+
+
+class Config:
+    def __init__(self) -> None:
+        self.user: str = args.user
+        self.password: str = args.user
+        self._set_from_config_file()
+
+    def _set_from_config_file(self) -> None:
+        if not CONFIG_FILE.exists():
+            return
+
+        config = configparser.ConfigParser()
+        config.read(CONFIG_FILE)
+
+        # Login
+        if "Login" in config:
+            login_config = config["Login"]
+
+            if not self.user:
+                self.user = self._read_from_config(login_config, "User")
+
+            if not self.password:
+                self.password = self._read_from_config(login_config, "Password")
+
+    def _read_from_config(self, config: configparser.SectionProxy, varname: str) -> Any:
+        if varname in config:
+            return config[varname]
+        if varname.lower() in config:
+            return config[varname]
+
+    def validate(self) -> None:
+        if not self.user:
+            print("No user has been set in either the config file or argument")
+            exit(1)
+        if not self.password:
+            print("No password has been set in either the config file or argument")
+            exit(1)
+
+
+config = Config()
+config.validate()
+
+
+command = [
+    "owncloudcmd",
+    "-s",
+    "-h",
+    "--non-interactive",
+    "-u",
+    config.user,
+    "-p",
+    config.password,
+    "--exclude",
+    EXCLUDE_FILE,
+    OWNCLOUD_DIR,
+    OWNCLOUD_URL,
+]
+
+run(command)
