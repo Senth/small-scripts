@@ -137,7 +137,7 @@ class Nginx(Config):
 
     @staticmethod
     def reload() -> None:
-        run(["rc-service", "nginx", "reload"])
+        run(["systemctl", "reload", "nginx.service"])
 
 
 class Apache(Config):
@@ -164,7 +164,8 @@ class Apache(Config):
     @staticmethod
     def reload() -> None:
         if args.frontend == "apache":
-            run(["rc-service", "apache2", "reload"])
+            pass
+#             run(["rc-service", "apache2", "reload"])
 
 
 class Certbot:
