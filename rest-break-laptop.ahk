@@ -2,8 +2,8 @@
 ; Use the windows scheduler to run this as often as you want.
 ; Note that it will check if the user was active the last minute to run a rest break
 
-; Name of games to disable this script for (RegEx mode)
-APPS_WITHOUT_BREAK := ["Slack \\| Slack call", "(Meeting) \\| Microsoft Teams"]
+; Name of games to disable this script for
+APPS_WITHOUT_BREAK := ["Slack | Slack call", "(Meeting) | Microsoft Teams"]
 GAMES_WITH_DELAYED_BREAK := ["Minecraft ahk_class GLFW30"]
 OWNCLOUD_DIR := "C:\Users\matmag\ownCloud\"
 PERSONAL_DATA_FILE := OWNCLOUD_DIR . "configs\personal-data.csv"
@@ -79,7 +79,7 @@ isAnyGameWithBreakRunning() {
 	global GAMES_WITH_DELAYED_BREAK
 
 	matched := False
-	SetTitleMatchMode, RegEx
+	SetTitleMatchMode, 2
 	for index, game in GAMES_WITH_DELAYED_BREAK {
 		if (WinActive(game)) {
 			matched := True
@@ -95,7 +95,7 @@ isAnyAppWithoutBreakRunning() {
 	global APPS_WITHOUT_BREAK
 
 	matched := False
-	SetTitleMatchMode, RegEx
+	SetTitleMatchMode, 2
 	for index, app in APPS_WITHOUT_BREAK {
 		if (WinExist(app)) {
 			matched := True
