@@ -5,7 +5,7 @@ import configparser
 from pathlib import Path
 from subprocess import run
 from sys import exit
-from typing import Any
+from typing import Any, Union
 
 HOME_DIR = Path.home()
 CONFIG_FILE = HOME_DIR.joinpath(".owncloud-sync-config")
@@ -14,15 +14,15 @@ OWNCLOUD_DIR = HOME_DIR.joinpath("ownCloud")
 OWNCLOUD_URL = "https://owncloud.senth.org"
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--user", help=f"Username, if none is specified reads {CONFIG_FILE}")
-parser.add_argument("--password", help=f"Password if none is specified reads {CONFIG_FILE}")
+parser.add_argument("-s", "--silent", help="No output")
 args = parser.parse_args()
 
 
 class Config:
     def __init__(self) -> None:
-        self.user: str = args.user
-        self.password: str = args.user
+        self.silent: str = args.silent
+        self.user: Union[str, None] = None
+        self.password: Union[str, None] = None
         self._set_from_config_file()
 
     def _set_from_config_file(self) -> None:
@@ -35,12 +35,8 @@ class Config:
         # Login
         if "Login" in config:
             login_config = config["Login"]
-
-            if not self.user:
-                self.user = self._read_from_config(login_config, "User")
-
-            if not self.password:
-                self.password = self._read_from_config(login_config, "Password")
+            self.user = self._read_from_config(login_config, "User")
+            self.password = self._read_from_config(login_config, "Password")
 
     def _read_from_config(self, config: configparser.SectionProxy, varname: str) -> Any:
         if varname in config:
@@ -60,20 +56,25 @@ class Config:
 config = Config()
 config.validate()
 
-
 command = [
     "owncloudcmd",
-    "-s",
     "-h",
     "--non-interactive",
     "-u",
     config.user,
     "-p",
     config.password,
-    "--exclude",
-    EXCLUDE_FILE,
-    OWNCLOUD_DIR,
-    OWNCLOUD_URL,
 ]
 
+if config.silent:
+    command.append("-s")
+
+if EXCLUDE_FILE.exists():
+    command.append("--exclude")
+    command.append(EXCLUDE_FILE)
+
+command.append(OWNCLOUD_DIR)
+command.append(OWNCLOUD_URL)
+
+print(command)
 run(command)
