@@ -2,13 +2,13 @@
 
 print_usage_and_exit() {
   echo "Requires one parameter. Will tag this repo and all submodules as well"
-  echo "usage: release [major|minor|bugfix]"
+  echo "usage: release [major|minor|patch]"
   exit 1
 }
 
 if [ $# != 1 ]; then
   print_usage_and_exit
-elif ! [[ "$1" == "major" || "$1" == "minor" || "$1" == "bugfix" ]]; then
+elif ! [[ "$1" == "major" || "$1" == "minor" || "$1" == "bugfix" || "$1" == "patch" ]]; then
   print_usage_and_exit
 fi
 
@@ -21,7 +21,7 @@ if [[ "$current_version" =~ (v?)([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
   v_prefix=${BASH_REMATCH[1]}
   next_major=${BASH_REMATCH[2]}
   next_minor=${BASH_REMATCH[3]}
-  next_bugfix=${BASH_REMATCH[4]}
+  next_patch=${BASH_REMATCH[4]}
 else 
   echo "Unable to parse $current_version"
   exit 1
@@ -32,14 +32,14 @@ fi
 if [ "$type" = "major" ]; then
   next_major=$((next_major + 1))
   next_minor=0
-  next_bugfix=0
+  next_patch=0
 elif [ "$type" = "minor" ]; then
   next_minor=$((next_minor + 1))
-  next_bugfix=0
-elif [ "$type" = "bugfix" ]; then
-  next_bugfix=$((next_bugfix + 1))
+  next_patch=0
+elif [[ "$type" == "bugfix" || "$type" == "patch" ]]; then
+  next_patch=$((next_patch + 1))
 fi
-next_version=$v_prefix$next_major.$next_minor.$next_bugfix
+next_version=$v_prefix$next_major.$next_minor.$next_patch
 
 echo "$current_version -> $next_version"
 
