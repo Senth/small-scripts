@@ -68,7 +68,7 @@ isPauseTime() {
 
 	if (not running) {
 		FormatTime, minutes,, mm
-		if (minutes == "00" || minutes == "30") {
+		if (minutes == "05" || minutes == "35") {
 			return True
 		}
 	}
