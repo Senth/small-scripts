@@ -22,6 +22,11 @@ if [[ "$current_version" =~ (v?)([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
   next_major=${BASH_REMATCH[2]}
   next_minor=${BASH_REMATCH[3]}
   next_patch=${BASH_REMATCH[4]}
+elif [[ "$current_version" == "" ]]; then
+  next_major=0
+  next_minor=0
+  next_patch=0
+  echo "First version! :)"
 else 
   echo "Unable to parse $current_version"
   exit 1
