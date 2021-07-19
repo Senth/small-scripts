@@ -8,7 +8,7 @@ zip_path = Path("/var/www/minecraft.senth.org-files/mods.zip")
 zip_path.unlink(missing_ok=True)
 
 # Zip new mods
-mods_dir = Path("/home/amp/ownCloud/client-mods/fabric-1.17")
+mods_dir = Path("/home/amp/nextcloud/client-mods/fabric-1.17")
 zip = zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED)
 
 for mod in mods_dir.glob("*"):
