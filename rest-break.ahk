@@ -1,16 +1,10 @@
-; Run once and if the user is active (and no fullscreen application is present) put up need rest screen
-; Use the windows scheduler to run this as often as you want.
-; Note that it will check if the user was active the last minute to run a rest break
-
-; Name of games to disable this script for
+; Name of games/apps to disable this script for
 GAMES := []
 GAMES_WITH_DELAYED_BREAK := ["Minecraft ahk_class GLFW30"]
-ENERGY_LEVELS_FILE := "O:\ownCloud\configs\personal-data.csv"
-ICON_FOLDER := "E:\ownCloud\configs\.commands\assets\icons\"
-NOTIFICATION_SOUND := "E:\ownCloud\Archived\Sounds\Notification\dong.wav"
+ENERGY_LEVELS_FILE := "E:\nextcloud\configs\personal-data.csv"
+ICON_FOLDER := "E:\nextcloud\configs\.commands\assets\icons\"
+NOTIFICATION_SOUND := "E:\nextcloud\Archived\Sounds\Notification\dong.wav"
 
-; In milliseconds
-IDLE_TIME := 60 * 1000
 BREAK_TIME := 3.5 * 60 * 1000
 ; BREAK_TIME := 5 * 1000
 BREAK_GAME_DELAY_TIME := 10 * 1000
@@ -19,33 +13,61 @@ timeLeftLabel := 1
 energyLevel := False
 extraCategory := False
 extraAction := False
+startTime := A_TickCount
+endTime := A_TickCount
+running := False
 
-FormatTime, currentDate,, yyyy-MM-dd HH:mm
+SetTimer, main, 10000
 
-; Skip if scroll lock is turned on
-if (GetKeyState("ScrollLock","T") == 1) {
-	ExitApp
+main() {
+	global startTime
+	global endTime
+	global BREAK_TIME
+	global currentDate
+	global running
+	global energyLevel
+	global extraCategory
+	global extraAction
+
+	if (shouldActivate()) {
+		startTime := A_TickCount
+		endTime := startTime + BREAK_TIME
+
+		createAndShowOverlay()
+		updateProgressBar()
+
+		sleepTime := -BREAK_TIME
+		running := True
+		energyLevel := False
+		extraCategory := False
+		extraAction := False
+		SetTimer, breakDone, -%BREAK_TIME%
+		SetTimer, updateProgressBar, 500
+		FormatTime, currentDate,, yyyy-MM-dd HH:mm
+	}
 }
 
+shouldActivate() {
+	return isPauseEnabled()
+		and isPauseTime()
+		and not isAnyGameWithoutBreakRunning()
+		and not isActiveWindowFullscreen()
+}
 
-; User has been active - activate overlay
-if (A_TimeIdlePhysical < IDLE_TIME && not isAnyGameWithoutBreakRunning() && not isActiveWindowFullscreen()) {
-	; Is a game with break being played, delay break with around 30 seconds
-	if (isAnyGameWithBreakRunning()) {
-		SoundPlay, %NOTIFICATION_SOUND%, 1
-		Sleep, BREAK_GAME_DELAY_TIME
+isPauseEnabled() {
+	return not GetKeyState("ScrollLock", "T" == 1)
+}
+
+isPauseTime() {
+	global running
+
+	if (not running) {
+		FormatTime, minutes,, mm
+		if (minutes == "00" || minutes == "30") {
+			return True
+		}
 	}
-	START_TIME := A_TickCount
-	END_TIME := START_TIME + BREAK_TIME
-
-	createAndShowOverlay()
-	updateProgressBar()
-
-	sleepTime := -BREAK_TIME
-	SetTimer, breakDone, -%BREAK_TIME%
-	SetTimer, updateProgressBar, 500
-} else {
-	ExitApp
+	return False
 }
 
 isAnyGameWithBreakRunning() {
@@ -193,10 +215,10 @@ addIcon(index, labelName, fileName, xCenter, yCenter) {
 }
 
 updateProgressBar() {
-	global END_TIME
+	global endTime
 	global BREAK_TIME
 
-	timeLeft := (END_TIME - A_TickCount) / 10.0
+	timeLeft := (endTime - A_TickCount) / 10.0
 
 	; Progress Bar
 	percentLeft := timeLeft / (BREAK_TIME / 1000.0)
@@ -211,9 +233,10 @@ updateProgressBar() {
 }
 
 breakDone() {
-	saveEnergyAndExtraAction()
+	global running
+	running := False
 	Gui Destroy
-	ExitApp
+	saveEnergyAndExtraAction()
 }
 
 saveEnergyAndExtraAction() {
@@ -232,17 +255,6 @@ saveToFile(category, value) {
 		FileAppend, %currentDate%`,%category%`,%value%`n, %ENERGY_LEVELS_FILE%
 	}
 }
-
-; Make it impossible to close the window
-LWin::Escape
-RWin::Escape
-LCtrl::Escape
-RCtrl::Escape
-LAlt::Escape
-RAlt::Escape
-
-return
-
 
 energyButton1Pressed:
 	energyLevel := 1
@@ -319,3 +331,12 @@ foodEveningSnack:
 	extraAction := "evening snack"
 	return
 
+; Make it impossible to close the window
+#if running
+	LWin::Escape
+	RWin::Escape
+	LCtrl::Escape
+	RCtrl::Escape
+	LAlt::Escape
+	RAlt::Escape
+return
