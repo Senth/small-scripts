@@ -17,7 +17,7 @@ startTime := A_TickCount
 endTime := A_TickCount
 running := False
 
-SetTimer, main, 10000
+SetTimer, main, 1000
 
 main() {
 	global startTime
@@ -55,7 +55,7 @@ shouldActivate() {
 }
 
 isPauseEnabled() {
-	return not GetKeyState("ScrollLock", "T" == 1)
+	return GetKeyState("ScrollLock", "T") == 0
 }
 
 isPauseTime() {
