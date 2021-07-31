@@ -27,7 +27,6 @@ main() {
 	global startTime
 	global endTime
 	global BREAK_TIME
-	global currentDate
 	global running
 	global energyLevel
 	global extraCategory
@@ -47,7 +46,6 @@ main() {
 		extraAction := False
 		SetTimer, breakDone, -%BREAK_TIME%
 		SetTimer, updateProgressBar, 500
-		FormatTime, currentDate,, yyyy-MM-dd HH:mm
 	}
 }
 
@@ -258,16 +256,20 @@ saveEnergyAndExtraAction() {
 	; We want to pause and save a bit later as the server updates and syncs files every XX:03
 	Sleep, 5 * 60 * 1000
 
-	saveToFile("energy", energyLevel)
-	saveToFile(extraCategory, extraAction)
+	save("energy", energyLevel)
+	save(extraCategory, extraAction)
 }
 
-saveToFile(category, value) {
-	global currentDate
+; Saves to https://home.senth.org/log
+save(category, value) {
 	global PERSONAL_DATA_FILE
 
 	if (category and value) {
-		FileAppend, %currentDate%`,%category%`,%value%`n, %PERSONAL_DATA_FILE%
+		json := "{""category"": """ . category . """,""value"": """ . value . """}"
+		request := ComObjCreate("WinHttp.WinHttpRequest.5.1")
+		request.open("POST", "https://home.senth.org/log")
+		request.SetRequestHeader("Content-Type", "application/json")
+		request.Send(json)
 	}
 }
 

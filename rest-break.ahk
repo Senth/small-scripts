@@ -23,7 +23,6 @@ main() {
 	global startTime
 	global endTime
 	global BREAK_TIME
-	global currentDate
 	global running
 	global energyLevel
 	global extraCategory
@@ -43,7 +42,6 @@ main() {
 		extraAction := False
 		SetTimer, breakDone, -%BREAK_TIME%
 		SetTimer, updateProgressBar, 500
-		FormatTime, currentDate,, yyyy-MM-dd HH:mm
 	}
 }
 
@@ -243,16 +241,20 @@ saveEnergyAndExtraAction() {
 	global energyLevel
 	global extraAction
 	global extraCategory
-	saveToFile("energy", energyLevel)
-	saveToFile(extraCategory, extraAction)
+	save("energy", energyLevel)
+	save(extraCategory, extraAction)
 }
 
-saveToFile(category, value) {
-	global currentDate
+; Saves to https://home.senth.org/log
+save(category, value) {
 	global ENERGY_LEVELS_FILE
 
 	if (category and value) {
-		FileAppend, %currentDate%`,%category%`,%value%`n, %ENERGY_LEVELS_FILE%
+		json := "{""category"": """ . category . """,""value"": """ . value . """}"
+		request := ComObjCreate("WinHttp.WinHttpRequest.5.1")
+		request.open("POST", "https://home.senth.org/log")
+		request.SetRequestHeader("Content-Type", "application/json")
+		request.Send(json)
 	}
 }
 
@@ -329,6 +331,10 @@ foodDinner:
 foodEveningSnack:
 	extraCategory := "food"
 	extraAction := "evening snack"
+	return
+
+^!Numpad0::
+	save("test-category", "the value")
 	return
 
 ; Make it impossible to close the window
