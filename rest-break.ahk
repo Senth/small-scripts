@@ -29,6 +29,12 @@ main() {
 	global extraAction
 
 	if (shouldActivate()) {
+		; Is a game with break being played, delay the break
+		if (isAnyGameWithBreakRunning()) {
+			SoundPlay, %NOTIFICATION_SOUND%, 1
+			Sleep, BREAK_GAME_DELAY_TIME
+		}
+
 		startTime := A_TickCount
 		endTime := startTime + BREAK_TIME
 
@@ -331,10 +337,6 @@ foodDinner:
 foodEveningSnack:
 	extraCategory := "food"
 	extraAction := "evening snack"
-	return
-
-^!Numpad0::
-	save("test-category", "the value")
 	return
 
 ; Make it impossible to close the window
