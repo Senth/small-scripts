@@ -5,10 +5,10 @@
 ; Name of games to disable this script for
 APPS_WITHOUT_BREAK := ["Slack | Slack call", "(Meeting) | Microsoft Teams"]
 GAMES_WITH_DELAYED_BREAK := ["Minecraft ahk_class GLFW30"]
-OWNCLOUD_DIR := "C:\Users\matmag\ownCloud\"
-PERSONAL_DATA_FILE := OWNCLOUD_DIR . "configs\personal-data.csv"
-ICON_FOLDER := OWNCLOUD_DIR . "configs\.commands\assets\icons\"
-NOTIFICATION_SOUND := OWNCLOUD_DIR . "Dev\Notification\dong.wav"
+NEXTCLOUD_DIR := "C:\Users\matmag\nextcloud\"
+PERSONAL_DATA_FILE := NEXTCLOUD_DIR . "configs\personal-data.csv"
+ICON_FOLDER := NEXTCLOUD_DIR . "configs\.commands\assets\icons\"
+NOTIFICATION_SOUND := NEXTCLOUD_DIR . "Dev\Notification\dong.wav"
 
 BREAK_TIME := 3.5 * 60 * 1000
 ; BREAK_TIME := 10 * 1000
