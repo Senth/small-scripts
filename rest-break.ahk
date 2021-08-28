@@ -20,6 +20,8 @@ running := False
 SetTimer, main, 1000
 
 main() {
+	global NOTIFICATION_SOUND
+	global BREAK_GAME_DELAY_TIME
 	global startTime
 	global endTime
 	global BREAK_TIME
