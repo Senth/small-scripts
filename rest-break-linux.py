@@ -14,10 +14,11 @@ from PyQt5.QtWidgets import QMainWindow, QApplication
 testing = False
 
 minute = "5,35"
-clicks_to_hide = 5
+clicks_to_hide = 20
 break_time = 3.5 * 60
 if testing:
-    break_time = 3
+    clicks_to_hide = 5
+    break_time = 5
     minute = "*"
 
 skip_breaks = ["Slack | Slack call", "(Meeting) | Microsoft Teams"]
@@ -33,7 +34,7 @@ class MainWindow(QMainWindow):
         )
         width = 7680
         if testing:
-            width = 500
+            width = 2000
         self.setGeometry(0, 0, width, 1440)
         self.setWindowOpacity(0.75)
         self.presses = 0
@@ -44,6 +45,7 @@ class MainWindow(QMainWindow):
         central_widget = QtWidgets.QWidget()
         self.setCentralWidget(central_widget)
         vbox = QtWidgets.QVBoxLayout()
+        vbox.setAlignment(QtCore.Qt.AlignCenter)
         central_widget.setLayout(vbox)
         self.time_passed_label = QtWidgets.QLabel()
         self.time_passed_label.setFixedWidth(500)
@@ -67,7 +69,7 @@ class MainWindow(QMainWindow):
         while time.time() < done_at:
             seconds_left = int(done_at - time.time())
             minutes_left = int(seconds_left / 60)
-            seconds_left = seconds_left - minutes_left
+            seconds_left = seconds_left - minutes_left * 60
             time_left = (
                 f"{minutes_left}".rjust(2, "0") + ":" + f"{seconds_left}".rjust(2, "0")
             )
