@@ -13,7 +13,7 @@ available_hook_names = []
 for hook_name in hooks:
     available_hook_names.append(hook_name)
 
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser(help="Installs git hooks")
 parser.add_argument("hook", choices=available_hook_names, help="The hook to install")
 
 args = parser.parse_args()
