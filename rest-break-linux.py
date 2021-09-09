@@ -55,6 +55,7 @@ class MainWindow(QMainWindow):
 
     def show_and_hide(self) -> None:
         if should_activate_break():
+            self.presses = 1
             super().show()
             self.delay_thread = Thread(target=self.delayed_hide)
             self.delay_thread.start()
