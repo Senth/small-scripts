@@ -4,4 +4,4 @@ PATH=$PATH:/home/senth/go/bin
 
 set -e
 make check
-make test-all
+make test-all-local
