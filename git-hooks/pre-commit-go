@@ -4,4 +4,5 @@ PATH=$PATH:/home/senth/go/bin
 
 set -e
 make check
+make start-emulators
 make test-all-local
