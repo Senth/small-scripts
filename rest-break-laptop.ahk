@@ -133,10 +133,15 @@ createAndShowOverlay() {
 	progressHeight := 50
 
 	; Location of elements depending on screen size
-	; (Only laptop)
 	if (SCREEN_WIDTH == 1920) {
+		; Knowit Office
+		screenHeight := SCREEN_HEIGHT
+		if (SCREEN_HEIGHT == 2160) {
+			screenHeight := 1080
+			yCenter := screenHeight + screenHeight / 2
+		}
 		elementOffsetY := 150
-		progressY := yCenter - progressHeight - SCREEN_HEIGHT / 6
+		progressY := yCenter - progressHeight - screenHeight / 6
 		energyY := progressY + elementOffsetY * 2
 		energyX := xCenter
 	} else if (SCREEN_WIDTH == 7680) {
