@@ -26,7 +26,7 @@ for hook_name in hooks:
 parser = argparse.ArgumentParser(description="Installs git hooks")
 parser.add_argument("hook", choices=available_hook_names, help="The hook to install")
 
-ModelTargs = parser.parse_args()
+args = parser.parse_args()
 
 # Symlink commit
 hook_name = args.hook
