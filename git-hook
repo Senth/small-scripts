@@ -2,12 +2,22 @@
 
 import argparse
 import os
+import re
 from pathlib import Path
 
 src_hook_dir = Path("/home/senth/.commands/git-hooks")
 git_hook_dir = Path(".git/hooks")
 
-hooks = {"pre-commit-go": "pre-commit"}
+# Get hooks from dir
+hooks = {}
+for hook in src_hook_dir.glob("*"):
+    if hook.is_dir():
+        continue
+
+    match = re.match(r"(\w+-\w+)-[\w-]+", hook.name)
+    if match:
+        hook_type = match.group(1)
+        hooks[hook.name] = hook_type
 
 available_hook_names = []
 for hook_name in hooks:
@@ -16,7 +26,7 @@ for hook_name in hooks:
 parser = argparse.ArgumentParser(description="Installs git hooks")
 parser.add_argument("hook", choices=available_hook_names, help="The hook to install")
 
-args = parser.parse_args()
+ModelTargs = parser.parse_args()
 
 # Symlink commit
 hook_name = args.hook
