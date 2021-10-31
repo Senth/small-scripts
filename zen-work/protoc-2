@@ -1,2 +1,0 @@
-#!/bin/bash
-docker run --rm -it -v $GOPATH/bin/protoc-gen-go:/usr/local/bin/protoc-gen-go -v $PWD:/mnt -w /mnt memominsk/protobuf-alpine $@
