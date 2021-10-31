@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Get master/main branch name
-master_test=`git branch | sed 's/ *//' | grep master`
-main_test=`git branch | sed 's/ *//' | grep main`
+master_test=`git branch | sed 's/ *//' | egrep "^master$"`
+main_test=`git branch | sed 's/ *//' | egrep "^main$"`
 
 if [ "$master_test" = "master" ]; then
   base_branch="master"
