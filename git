@@ -1,0 +1,103 @@
+#!/usr/bin/python3
+# A "Facade" in front of git for some safety measures and additional features.
+from __future__ import annotations
+
+import subprocess
+import sys
+from typing import Dict, List, Optional
+
+from colored import fg
+from tealprint import TealPrint
+
+
+def main() -> None:
+    if is_empty_command():
+        run_git(sys.argv)
+        return
+
+    # Extra functionality
+    extra = ExtraFunctionality.get_extra(sys.argv)
+    if extra:
+        extra.run()
+
+    # Run full command
+    if not extra or extra.run_default:
+        run_git(sys.argv)
+
+
+def is_empty_command() -> bool:
+    return len(sys.argv) <= 1
+
+
+def run_git(cmd: List[str]) -> None:
+    # Get platform dependent path/binary
+    if sys.platform == "win32":
+        cmd[0] = "git.exe"
+    elif sys.platform == "linux":
+        cmd[0] = "/usr/bin/git"
+
+    subprocess.run(cmd)
+
+
+def create_extras() -> None:
+    Checkout()
+    ForwardCommand(["rebase", "branch"], "git-rebase-branch", False)
+    ForwardCommand(["release"], "git-release", False)
+
+
+class ExtraFunctionality:
+    extras: List[ExtraFunctionality] = []
+
+    def __init__(self, command: List[str], run_default: bool) -> None:
+        self.command = command
+        self.run_default = run_default
+        ExtraFunctionality.extras.append(self)
+
+    def should_run(self, cmd: List[str]) -> bool:
+        if len(cmd) - 1 < len(self.command):
+            return False
+
+        for i in range(len(self.command)):
+            if cmd[i + 1] != self.command[i]:
+                return False
+
+        return True
+
+    def run(self, cmd: List[str]) -> None:
+        pass
+
+    @staticmethod
+    def get_extra(cmd: List[str]) -> Optional[ExtraFunctionality]:
+        for extra in ExtraFunctionality.extras:
+            if extra.should_run(cmd):
+                return extra
+
+
+class Checkout(ExtraFunctionality):
+    def __init__(self) -> None:
+        super().__init__(["checkout", "-b"], True)
+
+    def run(self, cmd: List[str]) -> None:
+        TealPrint.info(f"Pulling before checkout out a new branch", color=fg("green"))
+        run_git(["git", "pull"])
+
+
+class ForwardCommand(ExtraFunctionality):
+    def __init__(self, command: List[str], to_run: str, run_default: bool) -> None:
+        super().__init__(command, run_default)
+        self.to_run = to_run
+
+    def run(self, cmd: List[str]) -> None:
+        command = self.compose_cmd(cmd)
+        subprocess.run(command)
+
+    def compose_cmd(self, cmd: List[str]) -> List[str]:
+        command = [self.to_run]
+
+        for i in range(len(cmd) - len(self.command) - 1):
+            command.append(cmd[i])
+
+        return command
+
+
+main()
