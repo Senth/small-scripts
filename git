@@ -18,7 +18,7 @@ def main() -> None:
     # Extra functionality
     extra = ExtraFunctionality.get_extra(sys.argv)
     if extra:
-        extra.run()
+        extra.run(sys.argv)
 
     # Run full command
     if not extra or extra.run_default:
