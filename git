@@ -4,13 +4,15 @@ from __future__ import annotations
 
 import subprocess
 import sys
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from colored import fg
 from tealprint import TealPrint
 
 
 def main() -> None:
+    create_extras()
+
     if is_empty_command():
         run_git(sys.argv)
         return
