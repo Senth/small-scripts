@@ -144,7 +144,19 @@ createAndShowOverlay() {
 		progressY := yCenter - progressHeight - screenHeight / 6
 		energyY := progressY + elementOffsetY * 2
 		energyX := xCenter
-	} else if (SCREEN_WIDTH == 7680) {
+	}
+	; IKEA - Two screens
+	else if (SCREEN_WIDTH == 3840) {
+		elementOffsetY := 150
+		screenHeight := 1080
+		yCenter := screenHeight / 2
+		xCenter := 1920 + 1920 / 2
+		progressY := yCenter - progressHeight - screenHeight / 6
+		energyY := progressY + elementOffsetY * 2
+		energyX := xCenter
+	}
+	; Home
+	else if (SCREEN_WIDTH == 7680) {
 		elementOffsetY := 200
 		monitorWidth := SCREEN_WIDTH / 3
 		progressY := yCenter - progressHeight
