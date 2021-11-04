@@ -1,3 +1,2 @@
 @ECHO OFF
-ECHO.
-python E:\nextcloud\configs\.commands\git %*
+python %NEXTCLOUD_DIR%\configs\.commands\git %*
