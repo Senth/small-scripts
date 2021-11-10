@@ -36,16 +36,18 @@ main() {
 		startTime := A_TickCount
 		endTime := startTime + BREAK_TIME
 
-		createAndShowOverlay()
-		updateProgressBar()
+		created := createAndShowOverlay()
+		if (created) {
+			updateProgressBar()
 
-		sleepTime := -BREAK_TIME
-		running := True
-		energyLevel := False
-		extraCategory := False
-		extraAction := False
-		SetTimer, breakDone, -%BREAK_TIME%
-		SetTimer, updateProgressBar, 500
+			sleepTime := -BREAK_TIME
+			running := True
+			energyLevel := False
+			extraCategory := False
+			extraAction := False
+			SetTimer, breakDone, -%BREAK_TIME%
+			SetTimer, updateProgressBar, 500
+		}
 	}
 }
 
@@ -163,6 +165,10 @@ createAndShowOverlay() {
 		energyY := progressY - elementOffsetY
 		energyX := xCenter + monitorWidth
 	}
+	; Not configured
+	else {
+		return False
+	}
 
 	progressX := xCenter - progressWidth / 2
 	progressHeaderY := progressY - elementOffsetY
@@ -190,6 +196,8 @@ createAndShowOverlay() {
 	WinGet ID, ID, A                         ; ...with HWND/handle ID
 	Winset AlwaysOnTop,ON,ahk_id %ID%        ; Keep it always on the top
 	WinSet Transparent,220,ahk_id %ID%       ; Set transparency
+
+	return True
 }
 
 createEnergyLevelButtons(xCenter, energyY, elementOffsetY) {
