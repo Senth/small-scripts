@@ -7,15 +7,21 @@ from subprocess import run
 from sys import exit
 from typing import Any, Union
 
+from tealprint import TealConfig, TealLevel, TealPrint
+
 HOME_DIR = Path.home()
 CONFIG_FILE = HOME_DIR.joinpath(".nextcloud-sync-config")
 EXCLUDE_FILE = HOME_DIR.joinpath(".nextcloud-exclude-list")
+LOCK_FILE = HOME_DIR.joinpath(".nextcloud.lock")
 NEXTCLOUD_DIR = HOME_DIR.joinpath("nextcloud")
 NEXTCLOUD_URL = "https://nextcloud.senth.org"
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-s", "--silent", help="No output")
+parser.add_argument("-s", "--silent", action="store_true", help="No output")
 args = parser.parse_args()
+
+if args.silent:
+    TealConfig.level = TealLevel.none
 
 
 class Config:
@@ -46,11 +52,9 @@ class Config:
 
     def validate(self) -> None:
         if not self.user:
-            print("No user has been set in either the config file or argument")
-            exit(1)
+            TealPrint.error("No user has been set in either the config file or argument", exit=True)
         if not self.password:
-            print("No password has been set in either the config file or argument")
-            exit(1)
+            TealPrint.error("No password has been set in either the config file or argument", exit=True)
 
 
 config = Config()
@@ -76,5 +80,13 @@ if EXCLUDE_FILE.exists():
 command.append(NEXTCLOUD_DIR)
 command.append(NEXTCLOUD_URL)
 
-print(command)
-run(command)
+if LOCK_FILE.exists():
+    TealPrint.info("ℹ Skipping sync because lockfile exists. Another instance is probably already syncing...")
+    TealPrint.info(f"If not, you can always delete the {LOCK_FILE}")
+else:
+    try:
+        LOCK_FILE.touch()
+        TealPrint.verbose(str(command))
+        run(command)
+    except KeyboardInterrupt:
+        LOCK_FILE.unlink()
