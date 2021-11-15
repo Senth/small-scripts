@@ -44,6 +44,7 @@ def run_git(cmd: List[str]) -> None:
 def create_extras() -> None:
     Checkout()
     ForwardCommand(["rebase", "branch"], "git-rebase-branch", False)
+    ForwardCommand(["hook"], "git-hook", False)
     ForwardCommand(["release"], "git-release", False)
 
 
@@ -96,7 +97,7 @@ class ForwardCommand(ExtraFunctionality):
     def compose_cmd(self, cmd: List[str]) -> List[str]:
         command = [self.to_run]
 
-        for i in range(len(cmd) - len(self.command) - 1):
+        for i in range(len(self.command) + 1, len(cmd)):
             command.append(cmd[i])
 
         return command
