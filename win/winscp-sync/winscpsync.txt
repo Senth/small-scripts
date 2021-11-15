@@ -1,0 +1,6 @@
+option batch abort
+option confirm off
+open user@domain.org
+option transfer binary
+synchronize -speed=10 remote D:\Temp\synchronize /mnt/lvm/temp/synchronize
+exit
