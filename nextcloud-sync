@@ -87,5 +87,5 @@ else:
         LOCK_FILE.touch()
         TealPrint.verbose(str(command))
         run(command)
-    except KeyboardInterrupt:
+    finally:
         LOCK_FILE.unlink()
