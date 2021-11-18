@@ -2,6 +2,7 @@
 # A "Facade" in front of git for some safety measures and additional features.
 from __future__ import annotations
 
+import re
 import subprocess
 import sys
 from typing import List, Optional
@@ -31,18 +32,22 @@ def is_empty_command() -> bool:
     return len(sys.argv) <= 1
 
 
-def run_git(cmd: List[str]) -> None:
+def run_git(cmd: List[str], capture_output=False) -> str:
     # Get platform dependent path/binary
     if sys.platform == "win32":
         cmd[0] = "git.exe"
     elif sys.platform == "linux":
         cmd[0] = "/usr/bin/git"
 
-    subprocess.run(cmd)
+    result = subprocess.run(cmd, capture_output=capture_output)
+    if result:
+        return str(result.stdout)
+    return ""
 
 
 def create_extras() -> None:
     Checkout()
+    PruneLocalBranches()
     ForwardCommand(["rebase", "branch"], "git-rebase-branch", False)
     ForwardCommand(["hook"], "git-hook", False)
     ForwardCommand(["release"], "git-release", False)
@@ -101,6 +106,25 @@ class ForwardCommand(ExtraFunctionality):
             command.append(cmd[i])
 
         return command
+
+
+class PruneLocalBranches(ExtraFunctionality):
+    def __init__(self) -> None:
+        super().__init__(["prune", "local-branches"], False)
+
+    def run(self, cmd: List[str]) -> None:
+        to_prune = self.get_local_branches_not_on_remote()
+
+        for branch in to_prune:
+            run_git(["git", "branch", "-D", branch])
+
+    def get_local_branches_not_on_remote(self) -> List[str]:
+        run_git(["git", "fetch", "-p"], capture_output=True)
+        out = run_git(["git", "branch", "-vv"], capture_output=True)
+
+        pattern = re.compile(r"origin\/([\/\w\d\-_]+): gone")
+        matches = re.findall(pattern, out)
+        return matches
 
 
 main()
