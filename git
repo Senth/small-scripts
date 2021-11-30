@@ -110,7 +110,7 @@ class ForwardCommand(ExtraFunctionality):
 
 class PruneLocalBranches(ExtraFunctionality):
     def __init__(self) -> None:
-        super().__init__(["prune", "local-branches"], False)
+        super().__init__(["prune", "branches"], False)
 
     def run(self, cmd: List[str]) -> None:
         to_prune = self.get_local_branches_not_on_remote()
