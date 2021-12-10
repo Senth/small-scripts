@@ -10,9 +10,11 @@ PERSONAL_DATA_FILE := NEXTCLOUD_DIR . "configs\personal-data.csv"
 ICON_FOLDER := NEXTCLOUD_DIR . "configs\.commands\assets\icons\"
 NOTIFICATION_SOUND := NEXTCLOUD_DIR . "Dev\Notification\dong.wav"
 
+CANCEL_AFTER_PRESSES := 20
 BREAK_TIME := 3.5 * 60 * 1000
 ; BREAK_TIME := 10 * 1000
 BREAK_GAME_DELAY_TIME := 10 * 1000
+presses := 0
 breakProgress := 0
 timeLeftLabel := 1
 energyLevel := False
@@ -65,8 +67,9 @@ isPauseEnabled() {
 
 isPauseTime() {
 	global running
+	global presses
 
-	if (not running) {
+	if (not running and presses == 0) {
 		FormatTime, minutes,, mm
 		if (minutes == "05" || minutes == "35") {
 			return True
@@ -275,7 +278,9 @@ updateProgressBar() {
 
 breakDone() {
 	global running
+	global presses
 	running := False
+	presses := 0
 	Gui Destroy
 	saveEnergyAndExtraAction()
 }
@@ -381,11 +386,17 @@ foodEveningSnack:
 	return
 
 ; Make it impossible to close the window
-#If running
+#If running and presses < CANCEL_AFTER_PRESSES
 	LWin::Escape
 	RWin::Escape
 	LCtrl::Escape
 	RCtrl::Escape
 	LAlt::Escape
 	RAlt::Escape
+	Escape::
+		presses += 1
+		if (presses >= CANCEL_AFTER_PRESSES) {
+			Gui, Destroy
+		}
+		return
 return
