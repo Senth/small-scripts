@@ -1,0 +1,18 @@
+#!/usr/bin/python
+
+from pathlib import Path
+import re
+import argparse
+import os
+
+parser = argparse.ArgumentParser()
+parser.add_argument("season", type=int, help="Specify the season to rename it to")
+args = parser.parse_args()
+
+
+rename_regex = re.compile(r"s\d{2,4}")
+
+for file in Path().glob("*.mp4"):
+    new_filename = rename_regex.sub(f"s{args.season}", file.name)
+    
+    os.rename(file.name, new_filename)
