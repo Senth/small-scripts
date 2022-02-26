@@ -36,7 +36,7 @@ for show in shows:
         new_files[show].append(basename)
 
         # Get title from file format
-        title = re.sub(r"^.*s\d{2}e\d+ - ", "", basename)
+        title = re.sub(r"^.*s\d+e\d+ - ", "", basename)
         # Remove part name and extension
         title = re.sub(r"(?: - pt\d|).mp4", "", title)
 
@@ -76,7 +76,7 @@ log("")
 for show in shows:
     for filepath in new_files[show]:
         # Get season
-        match = re.search(r"s(\d{2})e\d+", filepath)
+        match = re.search(r"s(\d+)e\d+", filepath)
         if match:
             season_number = match.group(1)
             temp_file = tmp_dir.joinpath(filepath)
