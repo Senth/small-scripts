@@ -15,7 +15,7 @@ testing = False
 
 minute = "5,35"
 clicks_to_hide = 20
-break_time = 3.5 * 60
+break_time = 5 * 60
 if testing:
     clicks_to_hide = 5
     break_time = 5
