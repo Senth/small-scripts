@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 import subprocess
 import sys
+from pathlib import Path
 from typing import List, Optional
 
 from colored import fg
@@ -41,7 +42,10 @@ def run_git(cmd: List[str], capture_output=False) -> str:
 
     result = subprocess.run(cmd, capture_output=capture_output)
     if result:
-        return str(result.stdout)
+        if capture_output:
+            return str(result.stdout)
+        elif result.returncode != 0:
+            sys.exit(result.returncode)
     return ""
 
 
@@ -86,7 +90,7 @@ class Checkout(ExtraFunctionality):
         super().__init__(["checkout", "-b"], True)
 
     def run(self, cmd: List[str]) -> None:
-        TealPrint.info(f"Pulling before checkout out a new branch", color=fg("green"))
+        TealPrint.info("Pulling before checkout out a new branch", color=fg("green"))
         run_git(["git", "pull"])
 
 
