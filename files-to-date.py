@@ -48,11 +48,11 @@ def rename_files(in_dir: Path, out_dir: Path):
                             full_name = rename_exif(datetime_original)
                         elif datetime_:
                             full_name = rename_exif(datetime_)
-            except:
+            except Exception:
                 pass
 
             if len(full_name) == 0:
-                full_name = date.strftime(f"%Y-%m-%d %H.%M.%S")
+                full_name = date.strftime("%Y-%m-%d %H.%M.%S")
             if args.keep_name:
                 full_name += f" {file.name}"
             else:

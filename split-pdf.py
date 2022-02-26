@@ -1,21 +1,20 @@
 #!/usr/bin/python3
 
 import argparse
-from PyPDF3 import PdfFileReader
-import os
 from os import path
 from subprocess import call
+
+from PyPDF3 import PdfFileReader
 
 parser = argparse.ArgumentParser()
 parser.add_argument("input_pdf", help="input PDF")
 parser.add_argument(
     "pages",
     nargs="*",
-    help="Specify where the next part should start. E.g., specifying 4 would in a 10 page PDF create a two PDFs, one with pages 1-3 and the other 4-10.",
+    help="Specify where the next part should start."
+    + "E.g., specifying 4 would in a 10 page PDF create a two PDFs, one with pages 1-3 and the other 4-10.",
 )
-parser.add_argument(
-    "-s", "--start", type=int, default=1, help="Specify which page to start splitting"
-)
+parser.add_argument("-s", "--start", type=int, default=1, help="Specify which page to start splitting")
 parser.add_argument(
     "-e",
     "--end",
