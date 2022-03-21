@@ -5,7 +5,6 @@ from __future__ import annotations
 import re
 import subprocess
 import sys
-from pathlib import Path
 from typing import List, Optional
 
 from colored import fg
@@ -126,8 +125,10 @@ class PruneLocalBranches(ExtraFunctionality):
         run_git(["git", "fetch", "-p"], capture_output=True)
         out = run_git(["git", "branch", "-vv"], capture_output=True)
 
-        pattern = re.compile(r"origin\/([\/\w\d\-_]+): gone")
+        # Origin that are gone
+        pattern = re.compile(r"([\w\d\-_\.]+)\s+[a-f0-9]+\s(?:(?!\[origin)|\[origin\/[\/\w\d\-_\.]+: gone)")
         matches = re.findall(pattern, out)
+        print(f"{matches}")
         return matches
 
 
