@@ -1,0 +1,121 @@
+#!/usr/bin/python
+
+import argparse
+import os
+import shutil
+from subprocess import run
+
+parser = argparse.ArgumentParser(description="Append python version to setup.py")
+parser.add_argument("version", help="The version to use, example: 3.10")
+args = parser.parse_args()
+
+
+class Repo:
+    def __init__(self, name: str, author="Senth", push_to_main=True, release=True) -> None:
+        self.name = name
+        self.author = author
+        self.push_to_main = push_to_main
+        self.release = release
+
+
+repos = [
+    Repo("backup-runner"),
+    Repo("blulib"),
+    Repo("home-control", release=False),
+    Repo("minecraft-mod-manager", push_to_main=False, release=False),
+    Repo("tealprint"),
+    Repo("webhook-actions"),
+    Repo("youtube-series-downloader"),
+]
+
+
+def main() -> None:
+    pwd = os.getcwd()
+    os.chdir("/tmp")
+
+    for repo in repos:
+        checkout(repo)
+        updated = update_python()
+        if not updated:
+            cleanup(repo)
+            continue
+
+        commit()
+
+        if repo.release:
+            release()
+
+        cleanup(repo)
+
+    os.chdir(pwd)
+
+
+def checkout(repo: Repo) -> None:
+    status = run(["git", "clone", f"git@github.com:{repo.author}/{repo.name}.git"])
+    if status.returncode != 0:
+        print("Failed to clone git")
+        exit(-1)
+    os.chdir(repo.name)
+
+    # Checkout branch
+    if not repo.push_to_main:
+        status = run(["git", "checkout", "-b", f"add-python-{args.version}-support"])
+        if status.returncode != 0:
+            print("Failed to checkout new branch")
+            exit(-1)
+
+
+def update_python() -> bool:
+    version_prefix = '        "Programming Language :: Python ::'
+    add_line = f'{version_prefix} {args.version}",\n'
+    new = ""
+
+    with open("setup.py", "r+") as file:
+        found = False
+        for line in file.readlines():
+            if line == add_line:
+                print("Already added, skipping")
+                return False
+
+            if not found and version_prefix in line:
+                found = True
+            elif found and version_prefix not in line:
+                found = False
+                new += add_line
+
+            new += line
+
+        file.seek(0)
+        file.write(new)
+        file.truncate()
+    return True
+
+
+def commit() -> None:
+    status = run(["git", "add", "."])
+    if status.returncode != 0:
+        print("Failed to add git")
+        exit(-1)
+    status = run(["git", "commit", "-m", f"Add support for python {args.version}"])
+    if status.returncode != 0:
+        print("Failed to commit")
+        exit(-1)
+    status = run(["git", "push"])
+    if status.returncode != 0:
+        print("Failed to push")
+        exit(-1)
+
+
+def release() -> None:
+    status = run(["git", "release", "patch"])
+    if status.returncode != 0:
+        print("Failed to release patch")
+        exit(-1)
+
+
+def cleanup(repo: Repo) -> None:
+    os.chdir("..")
+    shutil.rmtree(repo.name, ignore_errors=True)
+
+
+main()
