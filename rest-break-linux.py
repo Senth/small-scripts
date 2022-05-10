@@ -2,14 +2,13 @@
 
 import sys
 import time
+from subprocess import run
 from threading import Thread
 from typing import Optional
-from subprocess import run
-from PyQt5 import QtWidgets
-from apscheduler.schedulers.qt import QtScheduler
 
-from PyQt5 import QtCore, QtGui
-from PyQt5.QtWidgets import QMainWindow, QApplication
+from apscheduler.schedulers.qt import QtScheduler
+from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtWidgets import QApplication, QMainWindow
 
 testing = False
 
@@ -21,16 +20,14 @@ if testing:
     break_time = 5
     minute = "*"
 
-skip_breaks = ["Slack | Slack call", "(Meeting) | Microsoft Teams"]
+skip_breaks = ["Slack | Slack call", "(Meeting) | Microsoft Teams", "screen share"]
 
 
 class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
         self.setWindowFlags(
-            QtCore.Qt.WindowStaysOnTopHint
-            | QtCore.Qt.FramelessWindowHint
-            | QtCore.Qt.X11BypassWindowManagerHint
+            QtCore.Qt.WindowStaysOnTopHint | QtCore.Qt.FramelessWindowHint | QtCore.Qt.X11BypassWindowManagerHint
         )
         width = 7680
         if testing:
@@ -71,9 +68,7 @@ class MainWindow(QMainWindow):
             seconds_left = int(done_at - time.time())
             minutes_left = int(seconds_left / 60)
             seconds_left = seconds_left - minutes_left * 60
-            time_left = (
-                f"{minutes_left}".rjust(2, "0") + ":" + f"{seconds_left}".rjust(2, "0")
-            )
+            time_left = f"{minutes_left}".rjust(2, "0") + ":" + f"{seconds_left}".rjust(2, "0")
             self.time_passed_label.setText(time_left)
             time.sleep(0.5)
 
