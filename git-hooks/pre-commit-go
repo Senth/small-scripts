@@ -6,4 +6,4 @@ set -e
 make fix-imports
 make check
 make start-emulators
-make test-all-local
+make test-all || make test-all-local
