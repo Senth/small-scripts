@@ -1,7 +1,5 @@
 #!/bin/bash
 
-OLD_PWD=$(pwd)
-
 if [[ $# == 0 ]]; then
   echo "usage: $0 [win/linux] repo"
   exit 1
@@ -31,17 +29,17 @@ fi
 # Repo has already been cloned
 if [ -d "$repo_dir" ]; then
   echo "Repository has already been cloned"
-  cd "$git_dir"
-  exit 0
+  cd "$repo_dir"
 fi
 
 git clone "$repo"
-cd "$repo_dir"
 
 # Failed to clone
 if [[ $? != 0 ]]; then
+  cd "$OLD_PWD"
   exit $?
 fi
+
 
 # Set is as a personal account on work computer
 if [[ "$COMPUTER" = *work ]]; then
