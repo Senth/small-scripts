@@ -50,6 +50,7 @@ def run_git(cmd: List[str], capture_output=False) -> str:
 
 def create_extras() -> None:
     Checkout()
+    CheckoutFromMain()
     PruneLocalBranches()
     ForwardCommand(["rebase", "branch"], "git-rebase-branch", False)
     ForwardCommand(["hook"], "git-hook", False)
@@ -91,6 +92,17 @@ class Checkout(ExtraFunctionality):
     def run(self, cmd: List[str]) -> None:
         TealPrint.info("Pulling before checkout out a new branch", color=fg("green"))
         run_git(["git", "pull"])
+
+
+class CheckoutFromMain(ExtraFunctionality):
+    def __init__(self) -> None:
+        super().__init__(["checkout", "-m"], False)
+
+    def run(self, cmd: List[str]) -> None:
+        TealPrint.info("Checking out from main", color=fg("green"))
+        run_git(["git", "checkout", "main"])
+        cmd[2] = "-b"
+        subprocess.run(cmd)
 
 
 class ForwardCommand(ExtraFunctionality):
