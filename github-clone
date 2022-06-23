@@ -36,6 +36,7 @@ if [ -d "$repo_dir" ]; then
 fi
 
 git clone "$repo"
+cd "$repo_dir"
 
 # Failed to clone
 if [[ $? != 0 ]]; then
