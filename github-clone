@@ -29,7 +29,7 @@ elif [[ $# == 2 ]]; then
 fi
 
 # Repo has already been cloned
-if [ -d "$repo_dir" ];
+if [ -d "$repo_dir" ]; then
   echo "Repository has already been cloned"
   cd "$git_dir"
   exit 0
