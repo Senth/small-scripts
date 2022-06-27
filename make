@@ -41,7 +41,7 @@ def is_empty_command() -> bool:
 
 def create_extras() -> None:
     ListTargets()
-    RunIfExist()
+    RunIfExists()
 
 
 class ExtraFunctionality:
@@ -82,9 +82,9 @@ class ListTargets(ExtraFunctionality):
             print(target)
 
 
-class RunIfExist(ExtraFunctionality):
+class RunIfExists(ExtraFunctionality):
     def __init__(self) -> None:
-        super().__init__(["--run-if-exist"], False)
+        super().__init__(["--if-exists"], False)
 
     def run(self, cmd: List[str]) -> None:
         new_cmd = cmd[:1]

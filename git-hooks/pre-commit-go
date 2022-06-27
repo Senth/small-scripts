@@ -3,7 +3,6 @@
 PATH=$PATH:/home/senth/go/bin
 
 set -e
-make fix-imports
-make check
-make start-emulators
-make test-all || make test-all-local
+make --if-exists fix-imports check
+make --if-exists start-emulators
+make --if-exists test-all test-all-local test
