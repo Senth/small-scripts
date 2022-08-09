@@ -8,3 +8,8 @@ fi
 if command -v brew &> /dev/null; then
 	brew upgrade
 fi
+
+# Golang
+if command -v go &> /dev/null; then
+	/home/senth/.commands/update-golang
+fi
