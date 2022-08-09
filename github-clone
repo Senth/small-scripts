@@ -36,10 +36,10 @@ git clone "$repo"
 
 # Failed to clone
 if [[ $? != 0 ]]; then
-  cd "$OLD_PWD"
   exit $?
 fi
 
+cd "$repo_dir"
 
 # Set is as a personal account on work computer
 if [[ "$COMPUTER" = *work ]]; then
