@@ -11,7 +11,7 @@ OUT_FILE="$2"
 # download next format
 
 temp_file=youtube-dl-$RANDOM-$RANDOM.mp4.webm
-youtube-dl --output=$temp_file --audio-format best "$URL"
+yt-dlp --output=$temp_file --audio-format best "$URL"
 if [ -f "$temp_file" ]; then
 	# Create mp3 file
 	ffmpeg -i $temp_file -acodec libmp3lame -ac 2 -ab 320k -vn -y "$OUT_FILE"
