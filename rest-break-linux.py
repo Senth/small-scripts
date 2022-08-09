@@ -6,7 +6,7 @@ from subprocess import run
 from threading import Thread
 from typing import Optional
 
-from apscheduler.schedulers.qt import QtScheduler
+from apscheduler.schedulers.background import BackgroundScheduler
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QApplication, QMainWindow
 
@@ -42,12 +42,12 @@ class MainWindow(QMainWindow):
         central_widget = QtWidgets.QWidget()
         self.setCentralWidget(central_widget)
         vbox = QtWidgets.QVBoxLayout()
-        vbox.setAlignment(QtCore.Qt.AlignCenter)
+        vbox.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         central_widget.setLayout(vbox)
         self.time_passed_label = QtWidgets.QLabel()
         self.time_passed_label.setFixedWidth(500)
         self.time_passed_label.setText("XX:XX")
-        self.time_passed_label.setAlignment(QtCore.Qt.AlignCenter)
+        self.time_passed_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         vbox.addWidget(self.time_passed_label)
 
     def show_and_hide(self) -> None:
@@ -91,13 +91,27 @@ def in_a_meeting() -> bool:
     return False
 
 
+class Scheduler(QtCore.QObject):
+    def __init__(self, window) -> None:
+        super().__init__()
+        self.window = window
+        self.scheduler = BackgroundScheduler()
+        self.scheduler.add_job(self._on_triggered, "cron", minute=minute)
+
+    def start(self) -> None:
+        self.scheduler.start()
+
+    def _on_triggered(self) -> None:
+        print("triggered")
+        self.window.show_and_hide()
+
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     app.setStyleSheet("QLabel{font-size: 72pt;}")
     window = MainWindow()
 
-    scheduler = QtScheduler()
-    scheduler.add_job(window.show_and_hide, trigger="cron", minute=minute)
+    scheduler = Scheduler(window)
     scheduler.start()
 
     app.exec_()
