@@ -6,6 +6,13 @@
 #
 # PIPETHIS_AUTHOR udhos
 
+
+# Start this script as sudo if not root
+if [ $UID != 0 ]; then
+	sudo $0
+	exit
+fi
+
 # ignore runtime environment variables
 # shellcheck disable=SC2153
 version=0.25
