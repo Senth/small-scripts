@@ -53,6 +53,7 @@ def create_extras() -> None:
     CheckoutFromMain()
     CommitAll()
     PruneLocalBranches()
+    Push()
     ForwardCommand(["rebase", "branch"], "git-rebase-branch", False)
     ForwardCommand(["hook"], "git-hook", False)
     ForwardCommand(["release"], "git-release", False)
@@ -162,6 +163,19 @@ class CommitAll(ExtraFunctionality):
         cmd = ["git", "commit", "-m"]
         cmd.extend(cmdExt)
         run_git(cmd)
+
+
+class Push(ExtraFunctionality):
+    """Automatically sets updstream if not set"""
+
+    def __init__(self) -> None:
+        super().__init__(["push"], run_default=True)
+
+    def run(self, cmd: List[str]) -> None:
+        out = run_git(["git", "status", "-b", "--porcelain=v2"], capture_output=True)
+        if "upstream" not in out:
+            TealPrint.info("Automatically setting upstream", color=fg("green"))
+            run_git(["git", "push", "--set-upstream", "origin", "HEAD"])
 
 
 main()
