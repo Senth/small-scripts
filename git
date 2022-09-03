@@ -33,6 +33,7 @@ def is_empty_command() -> bool:
 
 
 def run_git(cmd: List[str], capture_output=False) -> str:
+    """Call the real git binary with the given command."""
     # Get platform dependent path/binary
     if sys.platform == "win32":
         cmd[0] = "git.exe"
@@ -178,4 +179,5 @@ class Push(ExtraFunctionality):
             run_git(["git", "push", "--set-upstream", "origin", "HEAD"])
 
 
-main()
+if __name__ == "__main__":
+    main()
