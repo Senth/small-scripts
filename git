@@ -1,76 +1,83 @@
 #!/usr/bin/python3
-# A "Facade" in front of git for some safety measures and additional features.
 from __future__ import annotations
 
+import os
 import re
 import subprocess
 import sys
+from pathlib import Path
 from typing import List, Optional
-
-from colored import fg
-from tealprint import TealPrint
 
 
 def main() -> None:
-    create_extras()
+    extensions = create_extensions()
+    extension = get_extension(extensions, sys.argv)
 
-    if is_empty_command():
-        run_git(sys.argv)
-        return
+    # Run extension
+    if extension:
+        extension.run(sys.argv)
 
-    # Extra functionality
-    extra = ExtraFunctionality.get_extra(sys.argv)
-    if extra:
-        extra.run(sys.argv)
-
-    # Run full command
-    if not extra or extra.run_default:
+    # Run default/full command
+    if not extension or extension.run_default:
         run_git(sys.argv)
 
 
-def is_empty_command() -> bool:
-    return len(sys.argv) <= 1
+def create_extensions() -> List[Extension]:
+    extensions: List[Extension] = [
+        Checkout(),
+        CheckoutFromMain(),
+        CommitAll(),
+        Hook(),
+        PruneLocalBranches(),
+        Push(),
+        Rebase(),
+        Release(),
+    ]
+    return extensions
+
+
+def get_extension(extensions: List[Extension], cmd: List[str]) -> Optional[Extension]:
+    for extension in extensions:
+        if extension.should_run(cmd):
+            return extension
+    return None
 
 
 def run_git(cmd: List[str], capture_output=False) -> str:
-    # Get platform dependent path/binary
+    # As we will call our script git in the future, we have to call the original git command using the full path
     if sys.platform == "win32":
         cmd[0] = "git.exe"
     elif sys.platform == "linux":
         cmd[0] = "/usr/bin/git"
+    elif sys.platform == "darwin":
+        cmd[0] = "/usr/bin/git"  # Might be a different path for you? I don't have OSX ;)
 
     result = subprocess.run(cmd, capture_output=capture_output)
     if result:
         if capture_output:
-            return str(result.stdout)
+            return result.stdout.decode("utf-8")
         elif result.returncode != 0:
             sys.exit(result.returncode)
     return ""
 
 
-def create_extras() -> None:
-    Checkout()
-    CheckoutFromMain()
-    CommitAll()
-    PruneLocalBranches()
-    Push()
-    ForwardCommand(["rebase", "branch"], "git-rebase-branch", False)
-    ForwardCommand(["hook"], "git-hook", False)
-    ForwardCommand(["release"], "git-release", False)
+def get_current_branch() -> str:
+    current_branch = run_git(["git", "branch", "--show-current"], capture_output=True)
+    current_branch = current_branch.strip(" \t\n")
+    return current_branch
 
 
-class ExtraFunctionality:
-    extras: List[ExtraFunctionality] = []
-
+class Extension:
     def __init__(self, command: List[str], run_default: bool) -> None:
         self.command = command
         self.run_default = run_default
-        ExtraFunctionality.extras.append(self)
 
     def should_run(self, cmd: List[str]) -> bool:
+        # Check if the command is long enough to contain our command
         if len(cmd) - 1 < len(self.command):
             return False
 
+        # Check if the command matches our command
         for i in range(len(self.command)):
             if cmd[i + 1] != self.command[i]:
                 return False
@@ -80,73 +87,29 @@ class ExtraFunctionality:
     def run(self, cmd: List[str]) -> None:
         pass
 
-    @staticmethod
-    def get_extra(cmd: List[str]) -> Optional[ExtraFunctionality]:
-        for extra in ExtraFunctionality.extras:
-            if extra.should_run(cmd):
-                return extra
 
-
-class Checkout(ExtraFunctionality):
+class Checkout(Extension):
     def __init__(self) -> None:
         super().__init__(["checkout", "-b"], run_default=True)
 
     def run(self, cmd: List[str]) -> None:
-        TealPrint.info("Pulling before checkout out a new branch", color=fg("green"))
         run_git(["git", "pull"])
 
 
-class CheckoutFromMain(ExtraFunctionality):
+class CheckoutFromMain(Extension):
     def __init__(self) -> None:
         super().__init__(["checkout", "-m"], run_default=False)
 
     def run(self, cmd: List[str]) -> None:
-        TealPrint.info("Checking out from main", color=fg("green"))
         run_git(["git", "checkout", "main"])
         cmd[2] = "-b"
+
+        # Here we actually want to call our script again, so that it pulls the main branch
+        # I.e. it will run the Checkout extension
         subprocess.run(cmd)
 
 
-class ForwardCommand(ExtraFunctionality):
-    def __init__(self, command: List[str], to_run: str, run_default: bool) -> None:
-        super().__init__(command, run_default)
-        self.to_run = to_run
-
-    def run(self, cmd: List[str]) -> None:
-        command = self.compose_cmd(cmd)
-        subprocess.run(command)
-
-    def compose_cmd(self, cmd: List[str]) -> List[str]:
-        command = [self.to_run]
-
-        for i in range(len(self.command) + 1, len(cmd)):
-            command.append(cmd[i])
-
-        return command
-
-
-class PruneLocalBranches(ExtraFunctionality):
-    def __init__(self) -> None:
-        super().__init__(["prune", "branches"], run_default=False)
-
-    def run(self, cmd: List[str]) -> None:
-        to_prune = self.get_local_branches_not_on_remote()
-
-        for branch in to_prune:
-            run_git(["git", "branch", "-D", branch])
-
-    def get_local_branches_not_on_remote(self) -> List[str]:
-        run_git(["git", "fetch", "-p"], capture_output=True)
-        out = run_git(["git", "branch", "-vv"], capture_output=True)
-
-        # Origin that are gone
-        pattern = re.compile(r"([\w\d\-_\.]+)\s+[a-f0-9]+\s(?:(?!\[origin)|\[origin\/[\/\w\d\-_\.]+: gone)")
-        matches = re.findall(pattern, out)
-        print(f"{matches}")
-        return matches
-
-
-class CommitAll(ExtraFunctionality):
+class CommitAll(Extension):
     def __init__(self) -> None:
         super().__init__(["ca"], run_default=False)
 
@@ -165,7 +128,99 @@ class CommitAll(ExtraFunctionality):
         run_git(cmd)
 
 
-class Push(ExtraFunctionality):
+class Hook(Extension):
+    """Only works in linux, OSX, and WSL
+
+    Hooks need to have the following format:
+    pre-commit-<name>
+
+    Only one hook per type is allowed at the moment.
+    """
+
+    src_hook_dir = Path("/home/senth/.commands/git-hooks")
+    git_hook_dir = Path(".git/hooks")
+
+    def __init__(self) -> None:
+        super().__init__(["hook"], run_default=False)
+
+    def run(self, cmd: List[str]) -> None:
+        hooks = self.get_hooks()
+
+        if len(cmd) < 3:
+            self.print_hooks(hooks)
+            return
+
+        hook_name = cmd[2]
+
+        # Find hook
+        found_hook = None
+        for hook in hooks:
+            if hook.name == hook_name:
+                found_hook = hook
+                break
+
+        if not found_hook:
+            print(f"Hook '{hook_name}' not found")
+            self.print_hooks(hooks)
+            return
+
+        self.symlink_hook(found_hook)
+
+    def print_hooks(self, hooks: List[HookInfo]) -> None:
+        print("Available hooks:")
+        for hook in hooks:
+            print(f"  {hook.name}")
+
+    def get_hooks(self) -> List[HookInfo]:
+        hooks: List[HookInfo] = []
+        for hook in Hook.src_hook_dir.glob("*"):
+            if hook.is_dir():
+                continue
+
+            match = re.match(r"(\w+-\w+)-[\w-]+", hook.name)
+            if match:
+                hook_type = match.group(1)
+                hooks.append(HookInfo(hook.name, hook_type, hook))
+
+        return hooks
+
+    def symlink_hook(self, hook: HookInfo) -> None:
+        symlink_file = Hook.git_hook_dir / hook.type
+        os.symlink(hook.path, symlink_file)
+
+
+class HookInfo:
+    def __init__(self, name: str, type: str, path: Path) -> None:
+        self.name = name
+        self.type = type
+        self.path = path
+
+
+class PruneLocalBranches(Extension):
+    def __init__(self) -> None:
+        super().__init__(["prune", "branches"], run_default=False)
+
+    def run(self, cmd: List[str]) -> None:
+        to_prune = self.get_local_branches_not_on_remote()
+
+        for branch in to_prune:
+            run_git(["git", "branch", "-D", branch])
+
+    def get_local_branches_not_on_remote(self) -> List[str]:
+        # Before fetching, remove any remote-tracking refeneces that no longer exist on the remote.
+        run_git(["git", "fetch", "-p"], capture_output=True)
+
+        # Get all local branches
+        out = run_git(["git", "branch", "-vv"], capture_output=True)
+
+        # Find all origins that are gone
+        pattern = re.compile(r"([\w\d\-_\.]+)\s+[a-f0-9]+\s(?:(?!\[origin)|\[origin\/[\/\w\d\-_\.]+: gone)")
+        matches = re.findall(pattern, out)
+        print(f"{matches}")
+        return matches
+
+
+class Push(Extension):
     """Automatically sets updstream if not set"""
 
     def __init__(self) -> None:
@@ -174,8 +229,118 @@ class Push(ExtraFunctionality):
     def run(self, cmd: List[str]) -> None:
         out = run_git(["git", "status", "-b", "--porcelain=v2"], capture_output=True)
         if "upstream" not in out:
-            TealPrint.info("Automatically setting upstream", color=fg("green"))
+            print("Automatically setting upstream")
             run_git(["git", "push", "--set-upstream", "origin", "HEAD"])
 
 
-main()
+class Rebase(Extension):
+    """Automatically pulls before doing a rebase"""
+
+    def __init__(self) -> None:
+        super().__init__(["rebase"], run_default=True)
+
+    def run(self, cmd: List[str]) -> None:
+        if len(cmd) <= 2:
+            return
+
+        target_branch = cmd[2]
+        current_branch = get_current_branch()
+        run_git(["git", "checkout", target_branch])
+        run_git(["git", "pull"])
+        run_git(["git", "checkout", current_branch])
+
+
+class Release(Extension):
+    """Finds the next tag version and creates a release branch from main"""
+
+    def __init__(self) -> None:
+        super().__init__(["release"], run_default=False)
+
+    def run(self, cmd: List[str]) -> None:
+        if len(cmd) <= 2:
+            print("Please specify a release type (major, minor, patch)")
+            return
+
+        # Get next version
+        current_version = self.get_current_version()
+        try:
+            next_version = self.get_next_version(current_version, cmd[2])
+        except ValueError:
+            print("Invalid release type, please specify (major, minor, patch)")
+            return
+
+        # Checkout main and make sure it's up to date
+        run_git(["git", "checkout", "main"])
+        run_git(["git", "pull"])
+
+        # Create tag
+        print("Create release tag")
+        print(f"{current_version} -> {next_version}")
+        run_git(["git", "tag", str(next_version)])
+
+        # Push tag to remote
+        run_git(["git", "push", "--tags"])
+
+    def get_current_version(self) -> Version:
+        # Get all tags
+        out = run_git(["git", "tag"], capture_output=True)
+        tags = out.split("\n")
+
+        # Find highest version
+        highest_version = Version("0.0.0")
+        for tag in tags:
+            try:
+                version = Version(tag)
+                if version > highest_version:
+                    highest_version = version
+            except ValueError:
+                pass
+
+        # Increment highest version
+        return highest_version
+
+    def get_next_version(self, current_version: Version, release_type: str) -> Version:
+        if release_type == "major":
+            return current_version.next_major()
+        elif release_type == "minor":
+            return current_version.next_minor()
+        elif release_type == "patch":
+            return current_version.next_patch()
+        else:
+            raise ValueError("Invalid release type")
+
+
+class Version:
+    regexp = re.compile(r"(v?)(\d+)\.(\d+)\.(\d+)")
+
+    def __init__(self, version: str) -> None:
+        match = re.match(Version.regexp, version)
+        if not match:
+            raise ValueError(f"Invalid version: {version}")
+
+        self.v = match.group(1)
+        self.major = int(match.group(2))
+        self.minor = int(match.group(3))
+        self.patch = int(match.group(4))
+
+    def next_major(self) -> Version:
+        return Version(f"{self.v}{self.major + 1}.0.0")
+
+    def next_minor(self) -> Version:
+        return Version(f"{self.v}{self.major}.{self.minor + 1}.0")
+
+    def next_patch(self) -> Version:
+        return Version(f"{self.v}{self.major}.{self.minor}.{self.patch + 1}")
+
+    def __str__(self) -> str:
+        return f"{self.v}{self.major}.{self.minor}.{self.patch}"
+
+    def __gt__(self, other: Version) -> bool:
+        return self.major > other.major or self.minor > other.minor or self.patch > other.patch
+
+    def __lt__(self, other: Version) -> bool:
+        return self.major < other.major or self.minor < other.minor or self.patch < other.patch
+
+
+if __name__ == "__main__":
+    main()
