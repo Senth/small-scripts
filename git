@@ -28,6 +28,7 @@ def create_extensions() -> List[Extension]:
         CheckoutFromMain(),
         CommitAll(),
         Hook(),
+        Main(),
         PruneLocalBranches(),
         Push(),
         Rebase(),
@@ -218,6 +219,17 @@ class PruneLocalBranches(Extension):
         matches = re.findall(pattern, out)
         print(f"{matches}")
         return matches
+
+
+class Main(Extension):
+    """Checkout main branch and pull it"""
+
+    def __init__(self) -> None:
+        super().__init__(["main"], run_default=False)
+
+    def run(self, cmd: List[str]) -> None:
+        run_git(["git", "checkout", "main"])
+        run_git(["git", "pull"])
 
 
 class Push(Extension):
