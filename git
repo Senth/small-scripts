@@ -255,11 +255,23 @@ class Rebase(Extension):
         if len(cmd) <= 2:
             return
 
-        target_branch = cmd[2]
+        target_branch = Rebase.find_target_branch(cmd)
         current_branch = get_current_branch()
         run_git(["git", "checkout", target_branch])
         run_git(["git", "pull"])
         run_git(["git", "checkout", current_branch])
+
+    @staticmethod
+    def find_target_branch(cmd: List[str]) -> str:
+        for i in range(2, len(cmd)):
+            arg = cmd[i]
+            if arg.startswith("-"):
+                continue
+
+            return arg
+
+        print("Didn't find target branch")
+        exit(1)
 
 
 class Release(Extension):
