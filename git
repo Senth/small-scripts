@@ -256,13 +256,18 @@ class Rebase(Extension):
             return
 
         target_branch = Rebase.find_target_branch(cmd)
+
+        # No targets found, continue with running only the rebase command
+        if not target_branch:
+            return
+
         current_branch = get_current_branch()
         run_git(["git", "checkout", target_branch])
         run_git(["git", "pull"])
         run_git(["git", "checkout", current_branch])
 
     @staticmethod
-    def find_target_branch(cmd: List[str]) -> str:
+    def find_target_branch(cmd: List[str]) -> Optional[str]:
         for i in range(2, len(cmd)):
             arg = cmd[i]
             if arg.startswith("-"):
@@ -270,8 +275,9 @@ class Rebase(Extension):
 
             return arg
 
-        print("Didn't find target branch")
-        exit(1)
+        # No target branch found
+        # This means it's probably a rebase --continue or --abort command
+        return None
 
 
 class Release(Extension):
