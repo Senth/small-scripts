@@ -1,0 +1,47 @@
+#!/usr/bin/python3
+
+import os
+import shutil
+from tealprint import TealPrint
+from pathlib import Path
+
+in_dir = "/mnt/d/Curse/Minecraft/Instances/Vault-Hunters"
+out_dir = "/mnt/e/nextcloud/Minecraft/server files/VaultHunters 1.18"
+
+copy = [
+    "config",
+    ("config", "config_unmodified"),
+    "defaultconfigs",
+    "mods",
+    "packmenu",
+    "patchouli_books",
+    "scripts",
+    "patchouli_data.json",
+]
+
+for f in copy:
+    if isinstance(f, str):
+        f = (f, f)
+
+    in_name = Path(f"{in_dir}/{f[0]}")
+    out_name = Path(f"{out_dir}/{f[1]}")
+
+    # Dirs
+    if out_name.is_dir():
+        TealPrint.info(f"🔥 Deleting dir {out_name}")
+        shutil.rmtree(out_name, ignore_errors=True)
+
+        TealPrint.info(f"➕ Copying {in_name} ➡️ {out_name}")
+        shutil.copytree(in_name, out_name)
+
+    # Files
+    elif out_name.is_file():
+        TealPrint.info(f"🔥 Deleting file {out_name}")
+        out_name.unlink()
+
+        TealPrint.info(f"➕ Copying {in_name} ➡️ {out_name}")
+        shutil.copy(in_name, out_name)
+
+# Run update to configurations
+os.chdir(out_dir)
+os.system("python -m patch")
