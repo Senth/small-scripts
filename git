@@ -13,19 +13,24 @@ def main() -> None:
     extensions = create_extensions()
     extension = get_extension(extensions, sys.argv)
 
-    # Run extension
+    # Run pre-extension
     if extension:
-        extension.run(sys.argv)
+        extension.pre(sys.argv)
 
     # Run default/full command
     if not extension or extension.run_default:
         run_git(sys.argv)
+
+    # Run post-extension
+    if extension:
+        extension.post(sys.argv)
 
 
 def create_extensions() -> List[Extension]:
     extensions: List[Extension] = [
         Checkout(),
         CheckoutFromMain(),
+        Clone(),
         CommitAll(),
         Hook(),
         Main(),
@@ -44,7 +49,7 @@ def get_extension(extensions: List[Extension], cmd: List[str]) -> Optional[Exten
     return None
 
 
-def run_git(cmd: List[str], capture_output=False) -> str:
+def run_git(cmd: List[str], capture_output=False, cwd: Optional[str] = None) -> str:
     # As we will call our script git in the future, we have to call the original git command using the full path
     if sys.platform == "win32":
         cmd[0] = "git.exe"
@@ -53,7 +58,7 @@ def run_git(cmd: List[str], capture_output=False) -> str:
     elif sys.platform == "darwin":
         cmd[0] = "/usr/bin/git"  # Might be a different path for you? I don't have OSX ;)
 
-    result = subprocess.run(cmd, capture_output=capture_output)
+    result = subprocess.run(cmd, capture_output=capture_output, cwd=cwd)
     if result:
         if capture_output:
             return result.stdout.decode("utf-8")
@@ -85,7 +90,10 @@ class Extension:
 
         return True
 
-    def run(self, cmd: List[str]) -> None:
+    def pre(self, cmd: List[str]) -> None:
+        pass
+
+    def post(self, cmd: List[str]) -> None:
         pass
 
 
@@ -93,7 +101,7 @@ class Checkout(Extension):
     def __init__(self) -> None:
         super().__init__(["checkout", "-b"], run_default=True)
 
-    def run(self, cmd: List[str]) -> None:
+    def pre(self, cmd: List[str]) -> None:
         run_git(["git", "pull"])
 
 
@@ -101,7 +109,7 @@ class CheckoutFromMain(Extension):
     def __init__(self) -> None:
         super().__init__(["checkout", "-m"], run_default=False)
 
-    def run(self, cmd: List[str]) -> None:
+    def pre(self, cmd: List[str]) -> None:
         run_git(["git", "checkout", "main"])
         cmd[2] = "-b"
 
@@ -110,11 +118,46 @@ class CheckoutFromMain(Extension):
         subprocess.run(cmd)
 
 
+class Clone(Extension):
+    """Makes sure that we have the correct user name and email set for the repository"""
+
+    work_repo = "github.com/ingka-group-digital"
+    repo_regex = re.compile(r"\/([^\/]+)\.git$")
+
+    def __init__(self) -> None:
+        super().__init__(["clone"], run_default=True)
+
+    def post(self, cmd: List[str]) -> None:
+        # Get the repository url from the command
+        url = cmd[2]
+        repo_name = ""
+
+        # Repository name specified as last argument
+        if len(cmd) > 3:
+            repo_name = cmd[3]
+        # Repository name specified in url
+        else:
+            match = self.repo_regex.search(url)
+            if match:
+                repo_name = match.group(1)
+            else:
+                return
+
+        if Clone.work_repo in url:
+            run_git(["git", "config", "user.name", "Matteus Magnusson"], cwd=repo_name)
+            run_git(["git", "config", "user.email", "matteus.magnusson@ingka.com"], cwd=repo_name)
+            run_git(["git", "config", "core.autcrlf", "input"], cwd=repo_name)
+        elif "work" in os.environ["COMPUTER"]:
+            run_git(["git", "config", "user.name", "Senth"], cwd=repo_name)
+            run_git(["git", "config", "user.email", "senth.wallace@gmail.com"], cwd=repo_name)
+            run_git(["git", "config", "core.autcrlf", "input"], cwd=repo_name)
+
+
 class CommitAll(Extension):
     def __init__(self) -> None:
         super().__init__(["ca"], run_default=False)
 
-    def run(self, cmd: List[str]) -> None:
+    def pre(self, cmd: List[str]) -> None:
         # Add all files to staging
         run_git(["git", "add", "--all"])
 
@@ -144,7 +187,7 @@ class Hook(Extension):
     def __init__(self) -> None:
         super().__init__(["hook"], run_default=False)
 
-    def run(self, cmd: List[str]) -> None:
+    def pre(self, cmd: List[str]) -> None:
         hooks = self.get_hooks()
 
         if len(cmd) < 3:
@@ -197,11 +240,22 @@ class HookInfo:
         self.path = path
 
 
+class Main(Extension):
+    """Checkout main branch and pull it"""
+
+    def __init__(self) -> None:
+        super().__init__(["main"], run_default=False)
+
+    def pre(self, cmd: List[str]) -> None:
+        run_git(["git", "checkout", "main"])
+        run_git(["git", "pull"])
+
+
 class PruneLocalBranches(Extension):
     def __init__(self) -> None:
         super().__init__(["prune", "branches"], run_default=False)
 
-    def run(self, cmd: List[str]) -> None:
+    def pre(self, cmd: List[str]) -> None:
         to_prune = self.get_local_branches_not_on_remote()
 
         for branch in to_prune:
@@ -215,21 +269,11 @@ class PruneLocalBranches(Extension):
         out = run_git(["git", "branch", "-vv"], capture_output=True)
 
         # Find all origins that are gone
+        print(f"Raw:\n{out}")
         pattern = re.compile(r"([\w\d\-_\.]+)\s+[a-f0-9]+\s(?:(?!\[origin)|\[origin\/[\/\w\d\-_\.]+: gone)")
         matches = re.findall(pattern, out)
-        print(f"{matches}")
+        print(f"Matches: {matches}")
         return matches
-
-
-class Main(Extension):
-    """Checkout main branch and pull it"""
-
-    def __init__(self) -> None:
-        super().__init__(["main"], run_default=False)
-
-    def run(self, cmd: List[str]) -> None:
-        run_git(["git", "checkout", "main"])
-        run_git(["git", "pull"])
 
 
 class Push(Extension):
@@ -238,7 +282,7 @@ class Push(Extension):
     def __init__(self) -> None:
         super().__init__(["push"], run_default=True)
 
-    def run(self, cmd: List[str]) -> None:
+    def pre(self, cmd: List[str]) -> None:
         out = run_git(["git", "status", "-b", "--porcelain=v2"], capture_output=True)
         if "upstream" not in out:
             print("Automatically setting upstream")
@@ -251,7 +295,7 @@ class Rebase(Extension):
     def __init__(self) -> None:
         super().__init__(["rebase"], run_default=True)
 
-    def run(self, cmd: List[str]) -> None:
+    def pre(self, cmd: List[str]) -> None:
         if len(cmd) <= 2:
             return
 
@@ -286,7 +330,7 @@ class Release(Extension):
     def __init__(self) -> None:
         super().__init__(["release"], run_default=False)
 
-    def run(self, cmd: List[str]) -> None:
+    def pre(self, cmd: List[str]) -> None:
         if len(cmd) <= 2:
             print("Please specify a release type (major, minor, patch)")
             return
