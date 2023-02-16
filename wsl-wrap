@@ -1,0 +1,24 @@
+#!/usr/bin/python
+# Map Windows path to WSL path
+
+import re
+import subprocess
+import sys
+
+args = sys.argv[1:]
+
+regex = re.compile(r"^([a-zA-Z]):[\\\/]")
+
+updated_args = []
+
+with open("/tmp/wsl-wrap.log", "w") as f:
+
+    for arg in args:
+        match = regex.match(arg)
+        if match:
+            arg = regex.sub(f"/mnt/{match.group(1).lower()}/", arg)
+        arg = arg.replace("\\", "/")
+        updated_args.append(arg)
+
+    f.write("\n".join(updated_args) + "\n")
+    subprocess.run(updated_args)
