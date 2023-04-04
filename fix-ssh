@@ -1,0 +1,4 @@
+#!/bin/bash
+
+killall ssh-agent
+ssh-agent -a "$XDG_RUNTIME_DIR/openssh_agent"
