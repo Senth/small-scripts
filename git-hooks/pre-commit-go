@@ -3,4 +3,4 @@
 PATH=$PATH:/home/senth/go/bin
 
 set -e
-make --if-exists check start-emulators test-all test-all-local test
+make --if-exists gosec check start-emulators test-all test-all-local test
