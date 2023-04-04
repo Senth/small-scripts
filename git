@@ -34,6 +34,7 @@ def create_extensions() -> List[Extension]:
         CommitAll(),
         Hook(),
         Main(),
+        Merge(),
         PruneLocalBranches(),
         Push(),
         Rebase(),
@@ -71,6 +72,15 @@ def get_current_branch() -> str:
     current_branch = run_git(["git", "branch", "--show-current"], capture_output=True)
     current_branch = current_branch.strip(" \t\n")
     return current_branch
+
+
+def git_stash() -> bool:
+    """Stashes the current changes if there are any"""
+    status = run_git(["git", "status", "--porcelain"], capture_output=True)
+    if status:
+        run_git(["git", "stash"])
+        return True
+    return False
 
 
 class Extension:
@@ -251,6 +261,36 @@ class Main(Extension):
         run_git(["git", "pull"])
 
 
+class Merge(Extension):
+    """Merge the current branch to another branch"""
+
+    def __init__(self) -> None:
+        super().__init__(["merge"], run_default=True)
+        self.stashed = False
+
+    def pre(self, cmd: List[str]) -> None:
+        if len(cmd) <= 2:
+            return
+
+        target_branch = Rebase.find_target_branch(cmd)
+
+        # No targets found, probably running the merge command without any merge
+        if not target_branch:
+            return
+
+        current_branch = get_current_branch()
+        self.stashed = git_stash()
+        run_git(["git", "checkout", target_branch])
+        run_git(["git", "pull"])
+        run_git(["git", "checkout", current_branch])
+
+    def post(self, cmd: List[str]) -> None:
+        if not self.stashed:
+            return
+
+        run_git(["git", "stash", "pop"])
+
+
 class PruneLocalBranches(Extension):
     def __init__(self) -> None:
         super().__init__(["prune", "branches"], run_default=False)
@@ -294,6 +334,7 @@ class Rebase(Extension):
 
     def __init__(self) -> None:
         super().__init__(["rebase"], run_default=True)
+        self.stashed = False
 
     def pre(self, cmd: List[str]) -> None:
         if len(cmd) <= 2:
@@ -306,9 +347,16 @@ class Rebase(Extension):
             return
 
         current_branch = get_current_branch()
+        self.stashed = git_stash()
         run_git(["git", "checkout", target_branch])
         run_git(["git", "pull"])
         run_git(["git", "checkout", current_branch])
+
+    def post(self, cmd: List[str]) -> None:
+        if not self.stashed:
+            return
+
+        run_git(["git", "stash", "pop"])
 
     @staticmethod
     def find_target_branch(cmd: List[str]) -> Optional[str]:
