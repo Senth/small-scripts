@@ -399,7 +399,7 @@ class Release(Extension):
             return
 
         # Get next version
-        current_version = self.get_current_version()
+        current_version = self.get_latest_version()
         try:
             next_version = self.get_next_version(current_version, cmd[2])
         except ValueError:
@@ -424,23 +424,23 @@ class Release(Extension):
         run_git(["git", "tag", str(next_version)])
         run_git(["git", "push", "--tags"])
 
-    def get_current_version(self) -> Version:
+    def get_latest_version(self) -> Version:
         # Get all tags
         out = run_git(["git", "tag"], capture_output=True)
         tags = out.split("\n")
 
         # Find highest version
-        highest_version = Version("0.0.0")
+        latest_version = Version("0.0.0")
         for tag in tags:
             try:
                 version = Version(tag)
-                if version > highest_version:
-                    highest_version = version
+                print(f"{version} > {latest_version}: {version > latest_version}")
+                if version > latest_version:
+                    latest_version = version
             except ValueError:
                 pass
 
-        # Increment highest version
-        return highest_version
+        return latest_version
 
     def get_next_version(self, current_version: Version, release_type: str) -> Version:
         if release_type == "major":
@@ -478,11 +478,11 @@ class Version:
     def __str__(self) -> str:
         return f"{self.v}{self.major}.{self.minor}.{self.patch}"
 
-    def __gt__(self, other: Version) -> bool:
-        return self.major > other.major or self.minor > other.minor or self.patch > other.patch
+    def __gt__(self, other: "Version") -> bool:
+        return (self.major, self.minor, self.patch) > (other.major, other.minor, other.patch)
 
-    def __lt__(self, other: Version) -> bool:
-        return self.major < other.major or self.minor < other.minor or self.patch < other.patch
+    def __lt__(self, other: "Version") -> bool:
+        return (self.major, self.minor, self.patch) < (other.major, other.minor, other.patch)
 
 
 if __name__ == "__main__":
