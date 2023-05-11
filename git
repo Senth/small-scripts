@@ -83,6 +83,21 @@ def git_stash() -> bool:
     return False
 
 
+def get_user_confirmation(prompt: str, default: bool) -> bool:
+    valid_responses = {"y": True, "n": False}
+    default_response = "Y" if default else "N"
+    prompt = f"{prompt} (y/n) [{default_response}]: "
+
+    while True:
+        user_input = input(prompt).strip().lower()
+        if user_input == "":
+            return default
+        elif user_input in valid_responses:
+            return valid_responses[user_input]
+        else:
+            print("Invalid input. Please enter 'Y' or 'N'.")
+
+
 class Extension:
     def __init__(self, command: List[str], run_default: bool) -> None:
         self.command = command
@@ -398,9 +413,15 @@ class Release(Extension):
         # Create tag
         print("Create release tag")
         print(f"{current_version} -> {next_version}")
-        run_git(["git", "tag", str(next_version)])
 
-        # Push tag to remote
+        # Prompt for confirmation
+        should_continue = get_user_confirmation(f"Create release tag {next_version}?", True)
+        if not should_continue:
+            print("Script canceled.")
+            sys.exit(1)
+
+        # Tag and push to remote
+        run_git(["git", "tag", str(next_version)])
         run_git(["git", "push", "--tags"])
 
     def get_current_version(self) -> Version:
