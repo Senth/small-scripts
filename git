@@ -434,7 +434,6 @@ class Release(Extension):
         for tag in tags:
             try:
                 version = Version(tag)
-                print(f"{version} > {latest_version}: {version > latest_version}")
                 if version > latest_version:
                     latest_version = version
             except ValueError:
