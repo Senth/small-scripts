@@ -136,6 +136,7 @@ createAndShowOverlay() {
 	yCenter := SCREEN_HEIGHT / 2
 	progressWidth := 500
 	progressHeight := 50
+	elementOffsetY := 150
 
 	; Location of elements depending on screen size
 	if (SCREEN_WIDTH == 1920) {
@@ -145,14 +146,12 @@ createAndShowOverlay() {
 			screenHeight := 1080
 			yCenter := screenHeight + screenHeight / 2
 		}
-		elementOffsetY := 150
 		progressY := yCenter - progressHeight - screenHeight / 6
 		energyY := progressY + elementOffsetY * 2
 		energyX := xCenter
 	}
 	; IKEA - Two screens
 	else if (SCREEN_WIDTH == 3840) {
-		elementOffsetY := 150
 		screenHeight := 1080
 		yCenter := screenHeight / 2
 		xCenter := 1920 + 1920 / 2
@@ -160,9 +159,17 @@ createAndShowOverlay() {
 		energyY := progressY + elementOffsetY * 2
 		energyX := xCenter
 	}
+	; IKEA - Widescreen
+	else if (SCREEN_WIDTH == 3440 && SCREEN_HEIGHT == 2520) {
+		screenHeight := 1440
+		yCenter := screenHeight / 2
+		xCenter := 3440 / 2
+		progressY := yCenter - progressHeight - screenHeight / 6
+		energyY := progressY + elementOffsetY * 2
+		energyX := xCenter
+	}
 	; IKEA - Three screens wide
 	else if (SCREEN_WIDTH == 5760) {
-		elementOffsetY := 150
 		progressY := yCenter - progressHeight - SCREEN_HEIGHT / 6
 		energyY := progressY + elementOffsetY * 2
 		energyX := xCenter
