@@ -136,11 +136,8 @@ class CheckoutFromMain(Extension):
 
     def pre(self, cmd: List[str]) -> None:
         run_git(["git", "checkout", "main"])
-        cmd[2] = "-b"
-
-        # Here we actually want to call our script again, so that it pulls the main branch
-        # I.e. it will run the Checkout extension
-        subprocess.run(cmd)
+        run_git(["git", "pull"])
+        run_git(["git", "checkout", "-b", cmd[3]])
 
 
 class Clone(Extension):
