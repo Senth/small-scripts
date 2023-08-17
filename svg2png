@@ -1,0 +1,35 @@
+#!/usr/bin/python3
+
+import argparse
+import subprocess
+
+parser = argparse.ArgumentParser(description="Convert SVG to PNG")
+parser.add_argument("svg", type=argparse.FileType("r"), nargs="+", help="SVG file to convert")
+parser.add_argument(
+    "sizes",
+    type=str,
+    help="Sizes to convert to in a comma separated list. Format is either in 100,200 or 100x100,200x300",
+)
+
+args = parser.parse_args()
+
+for size in args.sizes.split(","):
+    if "x" in size:
+        width, height = size.split("x")
+    else:
+        width, height = size, size
+
+    for svg in args.svg:
+        png = svg.name.replace(".svg", f"-{width}x{height}.png")
+        print(f"Converting {svg.name} to {png}")
+        subprocess.run(
+            [
+                "inkscape",
+                "--export-type=png",
+                f"--export-width={width}",
+                f"--export-height={height}",
+                "--export-background-opacity=0",
+                f"--export-filename={png}",
+                svg.name,
+            ]
+        )
