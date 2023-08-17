@@ -324,7 +324,6 @@ class PruneLocalBranches(Extension):
         print(f"Raw:\n{out}")
         pattern = re.compile(r"([\w\d\-_\.]+)\s+[a-f0-9]{7,8}\s(?:(?!\[origin)|\[origin\/[\/\w\d\-_\.]+: gone)")
         matches = re.findall(pattern, out)
-        print(f"Matches: {matches}")
         return matches
 
 
