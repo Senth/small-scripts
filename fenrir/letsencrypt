@@ -52,16 +52,16 @@ if args.frontend_port:
 
 def main():
     for domain_name in args.domain_names:
-        domain = Domain(domain_name)
-        domain.update()
+        # domain = Domain(domain_name)
+        # domain.update()
 
         if args.action == "add":
             certbot = Certbot(domain_name=domain_name)
             certbot.add()
 
     # Reload configurations
-    Nginx.reload()
-    Apache.reload()
+    # Nginx.reload()
+    # Apache.reload()
 
 
 class Config:
@@ -120,16 +120,12 @@ class Nginx(Config):
         """Update the configurations (but don't write)"""
         # Frontend
         if args.frontend_port:
-            self._frontend_conf = self._frontend_conf.replace(
-                "{FRONTEND_PORT}", args.frontend_port
-            )
+            self._frontend_conf = self._frontend_conf.replace("{FRONTEND_PORT}", args.frontend_port)
         self._conf = self._conf.replace("{FRONTEND}", self._frontend_conf)
 
         # Backend
         if args.backend_port:
-            self._backend_conf = self._backend_conf.replace(
-                "{BACKEND_PORT}", args.backend_port
-            )
+            self._backend_conf = self._backend_conf.replace("{BACKEND_PORT}", args.backend_port)
         self._conf = self._conf.replace("{BACKEND}", self._backend_conf)
 
         # Update general settings
@@ -165,6 +161,8 @@ class Apache(Config):
     def reload() -> None:
         if args.frontend == "apache":
             pass
+
+
 #             run(["rc-service", "apache2", "reload"])
 
 
