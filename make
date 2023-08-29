@@ -113,4 +113,7 @@ def get_make_targets() -> List[str]:
     return targets
 
 
-main()
+try:
+    main()
+except KeyboardInterrupt:
+    sys.exit(1)
