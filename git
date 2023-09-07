@@ -143,7 +143,7 @@ class CheckoutFromMain(Extension):
 class Clone(Extension):
     """Makes sure that we have the correct user name and email set for the repository"""
 
-    work_repo = "github.com/ingka-group-digital"
+    work_repo = "github.com:ingka-group-digital"
     repo_regex = re.compile(r"\/([^\/]+)\.git$")
 
     def __init__(self) -> None:
