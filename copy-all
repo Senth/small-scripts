@@ -1,0 +1,49 @@
+#!/usr/bin/python3
+
+import argparse
+from pathlib import Path
+import shutil
+from tealprint import TealPrint
+from hashlib import sha256
+import colored
+
+parser = argparse.ArgumentParser(description="Copy all files recursively from one directory into a single one")
+parser.add_argument("in_dir", help="The directory to copy from")
+parser.add_argument("out_dir", help="The directory to copy to")
+args = parser.parse_args()
+out_dir = Path(args.out_dir)
+
+def get_hash(file: Path) -> str:
+    with open(file, "rb") as f:
+        return sha256(f.read()).hexdigest()
+
+def get_suffix_file(file: Path) -> Path:
+    i = 0
+    while True:
+        suffix = f".{i}"
+        new_filename = file.parent / f"{file.stem}{suffix}{file.suffix}"
+        if not new_filename.exists():
+            return new_filename
+        i += 1
+
+def copy_dir(in_dir: Path):
+    TealPrint.info(in_dir.name, color=colored.attr("bold"), push_indent=True)
+    for file in in_dir.iterdir():
+        if file.is_dir():
+            copy_dir(file)
+        else:
+            out_file = out_dir / file.name
+            if out_file.exists():
+                in_hash = get_hash(file)
+                out_hash = get_hash(out_file)
+                if in_hash == out_hash:
+                    TealPrint.info(f"File {out_file} already found, skipping duplicate")
+                else:
+                    new_out_file = get_suffix_file(out_file)
+                    TealPrint.warning(f"File {out_file} already found, but is different. Saving as {new_out_file}")
+                    shutil.copy2(file, new_out_file)
+            else:
+                shutil.copy2(file, out_file)
+    TealPrint.pop_indent()
+
+copy_dir(Path(args.in_dir))
