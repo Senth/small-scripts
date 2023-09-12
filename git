@@ -143,8 +143,8 @@ class CheckoutFromMain(Extension):
 class Clone(Extension):
     """Makes sure that we have the correct user name and email set for the repository"""
 
-    work_repo = "github.com:ingka-group-digital"
-    repo_regex = re.compile(r"\/([^\/]+)\.git$")
+    work_repo = r"github\.com[\/:]ingka-group-digital"
+    repo_regex = re.compile(r"[\/:]([^\/]+)$")
 
     def __init__(self) -> None:
         super().__init__(["clone"], run_default=True)
@@ -161,11 +161,11 @@ class Clone(Extension):
         else:
             match = self.repo_regex.search(url)
             if match:
-                repo_name = match.group(1)
+                repo_name = match.group(1).removesuffix(".git")
             else:
                 return
 
-        if Clone.work_repo in url:
+        if re.search(Clone.work_repo, url):
             run_git(["git", "config", "user.name", "Matteus Magnusson"], cwd=repo_name)
             run_git(["git", "config", "user.email", "matteus.magnusson@ingka.com"], cwd=repo_name)
             run_git(["git", "config", "core.autcrlf", "input"], cwd=repo_name)
