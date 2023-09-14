@@ -30,6 +30,7 @@ def create_extensions() -> List[Extension]:
     extensions: List[Extension] = [
         Checkout(),
         CheckoutFromMain(),
+        CheckoutRemote(),
         Clone(),
         CommitAll(),
         Hook(),
@@ -138,6 +139,29 @@ class CheckoutFromMain(Extension):
         run_git(["git", "checkout", "main"])
         run_git(["git", "pull"])
         run_git(["git", "checkout", "-b", cmd[3]])
+
+
+class CheckoutRemote(Extension):
+    """Checkout a branch, if it already exists locally delete it before checking out"""
+
+    def __init__(self) -> None:
+        super().__init__(["checkout", "--remote"], run_default=False)
+        
+    def pre(self, cmd: List[str]):
+        if len(cmd) <= 3:
+            print("Please specify a branch to checkout")
+            return
+        
+        branch = cmd[3]
+        
+        # Check if the branch exists locally
+        out = run_git(["git", "branch", "--list", branch], capture_output=True)
+        if out:
+            # Branch exists locally, delete it
+            run_git(["git", "branch", "-D", branch])
+        
+        # Checkout the branch
+        run_git(["git", "checkout", branch])
 
 
 class Clone(Extension):
