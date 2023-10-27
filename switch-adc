@@ -1,0 +1,25 @@
+#!/usr/bin/python3
+
+import argparse
+import shutil
+from pathlib import Path
+
+parser = argparse.ArgumentParser(description="Switch env APPLICATION_DEFAULT_CREDENTIALS variable")
+parser.add_argument("env", choices=["work", "personal"], help="Switch to default or personal env")
+
+args = parser.parse_args()
+
+
+work_adc = Path.home() / ".config" / "gcloud" / "work_adc.json"
+personal_adc = Path.home() / ".config" / "gcloud" / "personal_adc.json"
+
+selected_adc = work_adc if args.env == "default" else personal_adc
+
+
+# Replace application_default_credentials file with the selected one
+adc = Path.home() / ".config" / "gcloud" / "application_default_credentials.json"
+
+if adc.exists():
+    adc.unlink()
+    
+shutil.copy(selected_adc, adc)
