@@ -1,0 +1,30 @@
+#!/usr/bin/python3
+
+from pathlib import Path
+
+keymap_path = Path.home() / "nextcloud" / "configs" / "goland-keymap.xml"
+target_name = "Senth.xml"
+jetbrains_dir = Path.home() / ".config" / "JetBrains"
+
+valid_ide_dir_starts_with = [
+    "GoLand",
+    "IdeaIC",
+    "JetBrainsClient",
+]
+
+# Iterate over all Jetbrains IDE directories and check if the keymap file exists
+for ide_dir in jetbrains_dir.iterdir():
+    if not ide_dir.is_dir():
+        continue
+
+    if not any([ide_dir.name.startswith(x) for x in valid_ide_dir_starts_with]):
+        continue
+
+    # Create keymap dir if it doesn't exist
+    keymap_file = ide_dir / "keymaps" / target_name
+    keymap_file.parent.mkdir(parents=True, exist_ok=True)
+    
+    if keymap_file.exists():
+        continue
+
+    keymap_file.symlink_to(keymap_path)
