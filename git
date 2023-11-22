@@ -20,6 +20,8 @@ def main() -> None:
     # Run default/full command
     if not extension or extension.run_default:
         run_git(sys.argv)
+    else:
+        extension.run(sys.argv)
 
     # Run post-extension
     if extension:
@@ -33,6 +35,7 @@ def create_extensions() -> List[Extension]:
         CheckoutRemote(),
         Clone(),
         CommitAll(),
+        Drop(),
         Hook(),
         Main(),
         Merge(),
@@ -117,6 +120,9 @@ class Extension:
         return True
 
     def pre(self, cmd: List[str]) -> None:
+        pass
+    
+    def run(self, cmd: List[str]) -> None:
         pass
 
     def post(self, cmd: List[str]) -> None:
@@ -203,7 +209,7 @@ class CommitAll(Extension):
     def __init__(self) -> None:
         super().__init__(["ca"], run_default=False)
 
-    def pre(self, cmd: List[str]) -> None:
+    def run(self, cmd: List[str]) -> None:
         # Add all files to staging
         run_git(["git", "add", "--all"])
 
@@ -217,6 +223,14 @@ class CommitAll(Extension):
         cmd.extend(cmdExt)
         run_git(cmd)
 
+class Drop(Extension):
+    """Drop all local changes"""
+    def __init__(self) -> None:
+        super().__init__(["drop"], run_default=False)
+        
+    def run(self, cmd: List[str]) -> None:
+        run_git(["git", "reset", "--hard", "HEAD"])
+        run_git(["git", "clean", "-fd"])
 
 class Hook(Extension):
     """Only works in linux, OSX, and WSL
@@ -233,7 +247,7 @@ class Hook(Extension):
     def __init__(self) -> None:
         super().__init__(["hook"], run_default=False)
 
-    def pre(self, cmd: List[str]) -> None:
+    def run(self, cmd: List[str]) -> None:
         hooks = self.get_hooks()
 
         if len(cmd) < 3:
@@ -292,7 +306,7 @@ class Main(Extension):
     def __init__(self) -> None:
         super().__init__(["main"], run_default=False)
 
-    def pre(self, cmd: List[str]) -> None:
+    def run(self, cmd: List[str]) -> None:
         run_git(["git", "checkout", "main"])
         run_git(["git", "pull"])
 
@@ -331,7 +345,7 @@ class PruneLocalBranches(Extension):
     def __init__(self) -> None:
         super().__init__(["prune", "branches"], run_default=False)
 
-    def pre(self, cmd: List[str]) -> None:
+    def run(self, cmd: List[str]) -> None:
         to_prune = self.get_local_branches_not_on_remote()
 
         for branch in to_prune:
