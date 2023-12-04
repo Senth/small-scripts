@@ -61,7 +61,9 @@ def run_git(cmd: List[str], capture_output=False, cwd: Optional[str] = None) -> 
     elif sys.platform == "linux":
         cmd[0] = "/usr/bin/git"
     elif sys.platform == "darwin":
-        cmd[0] = "/usr/bin/git"  # Might be a different path for you? I don't have OSX ;)
+        cmd[
+            0
+        ] = "/usr/bin/git"  # Might be a different path for you? I don't have OSX ;)
 
     result = subprocess.run(cmd, capture_output=capture_output, cwd=cwd)
     if result:
@@ -121,7 +123,7 @@ class Extension:
 
     def pre(self, cmd: List[str]) -> None:
         pass
-    
+
     def run(self, cmd: List[str]) -> None:
         pass
 
@@ -152,20 +154,20 @@ class CheckoutRemote(Extension):
 
     def __init__(self) -> None:
         super().__init__(["checkout", "--remote"], run_default=False)
-        
+
     def pre(self, cmd: List[str]):
         if len(cmd) <= 3:
             print("Please specify a branch to checkout")
             return
-        
+
         branch = cmd[3]
-        
+
         # Check if the branch exists locally
         out = run_git(["git", "branch", "--list", branch], capture_output=True)
         if out:
             # Branch exists locally, delete it
             run_git(["git", "branch", "-D", branch])
-        
+
         # Checkout the branch
         run_git(["git", "checkout", branch])
 
@@ -197,11 +199,17 @@ class Clone(Extension):
 
         if re.search(Clone.work_repo, url):
             run_git(["git", "config", "user.name", "Matteus Magnusson"], cwd=repo_name)
-            run_git(["git", "config", "user.email", "matteus.magnusson@ingka.com"], cwd=repo_name)
+            run_git(
+                ["git", "config", "user.email", "matteus.magnusson@ingka.com"],
+                cwd=repo_name,
+            )
             run_git(["git", "config", "core.autcrlf", "input"], cwd=repo_name)
         elif "work" in os.environ["COMPUTER"]:
             run_git(["git", "config", "user.name", "Senth"], cwd=repo_name)
-            run_git(["git", "config", "user.email", "senth.wallace@gmail.com"], cwd=repo_name)
+            run_git(
+                ["git", "config", "user.email", "senth.wallace@gmail.com"],
+                cwd=repo_name,
+            )
             run_git(["git", "config", "core.autcrlf", "input"], cwd=repo_name)
 
 
@@ -223,14 +231,17 @@ class CommitAll(Extension):
         cmd.extend(cmdExt)
         run_git(cmd)
 
+
 class Drop(Extension):
     """Drop all local changes"""
+
     def __init__(self) -> None:
         super().__init__(["drop"], run_default=False)
-        
+
     def run(self, cmd: List[str]) -> None:
         run_git(["git", "reset", "--hard", "HEAD"])
         run_git(["git", "clean", "-fd"])
+
 
 class Hook(Extension):
     """Only works in linux, OSX, and WSL
@@ -360,7 +371,9 @@ class PruneLocalBranches(Extension):
 
         # Find all origins that are gone
         print(f"Raw:\n{out}")
-        pattern = re.compile(r"  ([\w\d\-_\.]+)\s+[a-f0-9]{7,8}\s(?:(?!\[origin)|\[origin\/[\/\w\d\-_\.]+: gone)")
+        pattern = re.compile(
+            r"  ([\w\d\-_\.]+)\s+[a-f0-9]{7,8}\s(?:(?!\[origin)|\[origin\/[\/\w\d\-_\.]+: gone)"
+        )
         matches = re.findall(pattern, out)
         return matches
 
@@ -449,7 +462,9 @@ class Release(Extension):
         print(f"{current_version} -> {next_version}")
 
         # Prompt for confirmation
-        should_continue = get_user_confirmation(f"Create release tag {next_version}?", True)
+        should_continue = get_user_confirmation(
+            f"Create release tag {next_version}?", True
+        )
         if not should_continue:
             print("Script canceled.")
             sys.exit(1)
@@ -512,10 +527,18 @@ class Version:
         return f"{self.v}{self.major}.{self.minor}.{self.patch}"
 
     def __gt__(self, other: "Version") -> bool:
-        return (self.major, self.minor, self.patch) > (other.major, other.minor, other.patch)
+        return (self.major, self.minor, self.patch) > (
+            other.major,
+            other.minor,
+            other.patch,
+        )
 
     def __lt__(self, other: "Version") -> bool:
-        return (self.major, self.minor, self.patch) < (other.major, other.minor, other.patch)
+        return (self.major, self.minor, self.patch) < (
+            other.major,
+            other.minor,
+            other.patch,
+        )
 
 
 if __name__ == "__main__":
