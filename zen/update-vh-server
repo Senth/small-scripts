@@ -4,9 +4,15 @@ import os
 import shutil
 from tealprint import TealPrint
 from pathlib import Path
+from paramiko import SSHClient
+from scp import SCPClient
+from colored import attr
+from time import sleep
 
-in_dir = "/mnt/d/Curse/Minecraft/Instances/Vault-Hunters"
-out_dir = "/mnt/e/nextcloud/Minecraft/server files/VaultHunters 1.18"
+in_dir = Path("/mnt/d/Curse/Minecraft/Instances/Vault-Hunters")
+temp_dir = Path("/tmp/vh-server")
+vh_server_dir = Path("/home/amp/.ampdata/instances/VaultHunters/Minecraft")
+vh_nextcloud_dir = Path("/home/amp/nextcloud/server\\ files/VaultHunters\\ 1.18")
 
 copy = [
     "config",
@@ -19,29 +25,102 @@ copy = [
     "patchouli_data.json",
 ]
 
+excess_mods = [
+    "torohealth*",
+    "LegendaryTooltips*",
+    "rubidium*",
+]
+
+extra_mods = [
+    "longerlogintimes*",
+    "Dynmap*",
+]
+
+# Create the temp dir
+temp_dir.mkdir(exist_ok=True)
+
+# Copy over the files
+TealPrint.info(f"📂 Copying files from {in_dir} ➡️ {temp_dir}", color=attr("bold"), push_indent=True)
 for f in copy:
     if isinstance(f, str):
         f = (f, f)
 
     in_name = Path(f"{in_dir}/{f[0]}")
-    out_name = Path(f"{out_dir}/{f[1]}")
+    out_name = Path(f"{temp_dir}/{f[1]}")
 
     # Dirs
-    if out_name.is_dir():
-        TealPrint.info(f"🔥 Deleting dir {out_name}")
+    if in_name.is_dir():
+        TealPrint.info(f"🔥 Deleting old dir {out_name}")
         shutil.rmtree(out_name, ignore_errors=True)
 
         TealPrint.info(f"➕ Copying {in_name} ➡️ {out_name}")
         shutil.copytree(in_name, out_name)
 
     # Files
-    elif out_name.is_file():
-        TealPrint.info(f"🔥 Deleting file {out_name}")
-        out_name.unlink()
+    elif in_name.is_file():
+        TealPrint.info(f"🔥 Deleting old file {out_name}")
+        if out_name.exists():
+            out_name.unlink()
 
         TealPrint.info(f"➕ Copying {in_name} ➡️ {out_name}")
         shutil.copy(in_name, out_name)
+TealPrint.info("\n", pop_indent=True)
 
-# Run update to configurations
-os.chdir(out_dir)
-os.system("python -m patch")
+# Patch configurations
+os.chdir(Path(__file__).parent)
+os.system(f'python -m patch-vh-server "{temp_dir}"')
+
+
+# Remove excess mods
+TealPrint.info(f"🗑 Deleting excess mods", color=attr("bold"), push_indent=True)
+mods_dir = Path(f"{temp_dir}/mods")
+for f in excess_mods:
+    for mod in mods_dir.glob(f):
+        TealPrint.info(f"🗑 Deleting excess mod {mod}")
+        mod.unlink()
+TealPrint.pop_indent()
+
+
+# Use SSH and SCP to copy the files to the server
+with SSHClient() as ssh:
+    ssh.load_system_host_keys()
+    ssh.connect(hostname="senth.org", username="amp")
+
+    TealPrint.info("\n📂 Copying files to server", color=attr("bold"), push_indent=True)
+    with SCPClient(ssh.get_transport()) as scp:
+        for f in copy:       
+            if not isinstance(f, str):
+                continue
+
+            in_name = Path(f"{temp_dir}/{f}")
+            out_name = Path(f"{vh_server_dir}/{f}")
+
+            # Dirs
+            if in_name.is_dir():
+                TealPrint.info(f"🔥 Deleting old dir {out_name}")
+                ssh.exec_command(f'rm -rf "{out_name}"')
+                
+                # Some extra sleep is needed for the config dir, as it takes longer time to delete
+                if in_name.name == "config":
+                    sleep(4)
+
+            # Files
+            elif in_name.is_file():
+                TealPrint.info(f"🔥 Deleting old file {out_name}")
+                ssh.exec_command(f'rm -f "{out_name}"')
+
+            TealPrint.info(f"➕ Copying {in_name} ➡️ {out_name}")
+            scp.put(files=in_name, recursive=True, remote_path=out_name)
+    TealPrint.pop_indent()
+
+    # Add extra mods
+    TealPrint.info(f"\n➕ Adding extra mods", color=attr("bold"), push_indent=True)
+    for f in extra_mods:
+        in_file = vh_nextcloud_dir / f
+        out_dir = vh_server_dir / "mods"
+        TealPrint.info(f"➕ Copying {in_file} ➡️ {out_dir}")
+        ssh.exec_command(f'cp {in_file} "{out_dir}"')
+    TealPrint.pop_indent()
+
+# Remove the temp dir
+shutil.rmtree(temp_dir)
