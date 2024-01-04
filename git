@@ -204,7 +204,7 @@ class Clone(Extension):
                 cwd=repo_name,
             )
             run_git(["git", "config", "core.autcrlf", "input"], cwd=repo_name)
-        elif "work" in os.environ["COMPUTER"]:
+        elif "COMPUTER" in os.environ and "work" in os.environ["COMPUTER"]:
             run_git(["git", "config", "user.name", "Senth"], cwd=repo_name)
             run_git(
                 ["git", "config", "user.email", "senth.wallace@gmail.com"],
@@ -386,7 +386,24 @@ class Push(Extension):
 
     def pre(self, cmd: List[str]) -> None:
         out = run_git(["git", "status", "-b", "--porcelain=v2"], capture_output=True)
-        if "upstream" not in out:
+        removed_upstream = False
+
+        # Upstream set, but incorrectly to another branch name
+        if "upstream" in out:
+            upstream_search = re.search(r"branch\.upstream\s+origin/(.*)\n", out)
+            upstream = ""
+            if upstream_search:
+                upstream = upstream_search.group(1)
+            current_branch_search = re.search(r"branch\.head\s+(.*)\n", out)
+            current_branch = ""
+            if current_branch_search:
+                current_branch = current_branch_search.group(1)
+            if upstream != current_branch:
+                run_git(["git", "branch", "--unset-upstream"])
+                removed_upstream = True
+
+        # Upstream not set
+        if removed_upstream or "upstream" not in out:
             print("Automatically setting upstream")
             run_git(["git", "push", "--set-upstream", "origin", "HEAD"])
 

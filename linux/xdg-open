@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# Wrapper for xdg-open which fixes auth for Slack URLs
+if [[ "${1:-}" =~ ^slack:// ]]; then
+	exec /snap/bin/slack "$@"
+fi
+exec /usr/bin/xdg-open "$@"

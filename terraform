@@ -1,2 +1,2 @@
 #!/bin/bash
-docker run --rm -i -t -v "${PWD}:${PWD}" -v "${HOME}:/root" -w "${PWD}" hashicorp/terraform:latest $@
+docker run --pull=always --rm -i -t -v "${PWD}:${PWD}" -v "${HOME}:/root" -w "${PWD}" hashicorp/terraform:latest $@
