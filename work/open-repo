@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# Requires a repo name
+if [ $# -eq 0 ]; then
+	echo "No repo name provided"
+	exit 1
+fi
+
+# First arg is the repo name
+REPO_NAME="$1"
+
+GIT_DIR=~/git/ingka
+repo_dir="$GIT_DIR/$REPO_NAME"
+
+# Check out the repo if it doesn't exist
+if [ ! -d "$repo_dir" ]; then
+	ingka-clone "$REPO_NAME"
+fi
+
+# CWD to the repo and open it in Neovim
+cd "$repo_dir" || exit 1
+nvim
