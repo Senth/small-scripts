@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# Try running the chmod command with the given parameters
+success=$(chmod $@ 2>&1)
+
+# If the command failed, try running it again with sudo
+if [ $? -ne 0 ]; then
+		sudo chmod $@
+fi
