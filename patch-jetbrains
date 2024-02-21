@@ -3,8 +3,11 @@
 import os
 from pathlib import Path
 
-keymap_path = Path.home() / "nextcloud" / "configs" / "goland-keymap.xml"
-target_name = "Senth.xml"
+patch_files = {
+    "keymap.xml": Path("keymaps") / "Senth.xml",
+    "Scratchpad.xml": Path("Scratchpad.xml"),
+}
+nextcloud_dir = Path.home() / "nextcloud" / "configs" / "JetBrains"
 jetbrains_dir = Path.home() / ".config" / "JetBrains"
 
 # Special case for Windows
@@ -25,11 +28,16 @@ for ide_dir in jetbrains_dir.iterdir():
     if not any([ide_dir.name.startswith(x) for x in valid_ide_dir_starts_with]):
         continue
 
-    # Create keymap dir if it doesn't exist
-    keymap_file = ide_dir / "keymaps" / target_name
-    keymap_file.parent.mkdir(parents=True, exist_ok=True)
+    # Iterate over all patch files and add them
+    for in_file, out_file in patch_files.items():
+        nextcloud_file = nextcloud_dir / in_file
+        ide_file = ide_dir / out_file
 
-    if keymap_file.exists():
-        continue
+        # Create dir if it doesn't exist
+        ide_file.parent.mkdir(parents=True, exist_ok=True)
 
-    keymap_file.symlink_to(keymap_path)
+        # Remove existing symlink
+        ide_file.unlink(missing_ok=True)
+
+        # Create symlink
+        ide_file.symlink_to(nextcloud_file)
