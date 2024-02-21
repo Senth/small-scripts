@@ -80,16 +80,16 @@ class LootTablePatch(Patch):
                 TealPrint.verbose(f"➕ the_vault:fundamental_focus min({count.min}) max({count.max})")
 
     def _patch_item(self, file_name: str, item_pool: ItemPool, item: Item) -> None:
-        # if item.id == "the_vault:carbon_nugget":
-        #     new_min = int(item.count.min * 1)
-        #     new_max = int(item.count.max * 1.5)
-        #     if "ornate_chest" in file_name:
-        #         new_min = int(item.count.min * 1.5)
-        #         new_max = int(item.count.max * 1.5)
+        if item.id == "the_vault:carbon_nugget":
+            new_min = int(item.count.min * 1)
+            new_max = int(item.count.max * 1.5)
+            if "ornate_chest" in file_name:
+                new_min = int(item.count.min * 1.5)
+                new_max = int(item.count.max * 1.5)
 
-        #     TealPrint.verbose(f"🔸 {item.id} min({item.count.min} -> {new_min}) max({item.count.max} -> {new_max})")
-        #     item.count.min = new_min
-        #     item.count.max = new_max
+            TealPrint.verbose(f"🔸 {item.id} min({item.count.min} -> {new_min}) max({item.count.max} -> {new_max})")
+            item.count.min = new_min
+            item.count.max = new_max
 
         # elif item.id == "the_vault:chromatic_steel_nugget":
         #     new_weight = 8
@@ -108,12 +108,12 @@ class LootTablePatch(Patch):
             TealPrint.verbose(f"🔥 {item.id} as it's been added on EPIC level")
             item_pool.weight = new_weight
 
-        elif item.id == "the_vault:silver_scrap":
-            new_min = int(item.count.min * 1)
-            new_max = int(item.count.max * 3)
-            TealPrint.verbose(f"🔸 {item.id} min({item.count.min} -> {new_min}) max({item.count.max} -> {new_max})")
-            item.count.min = new_min
-            item.count.max = new_max
+        # elif item.id == "the_vault:silver_scrap":
+        #     new_min = int(item.count.min * 1)
+        #     new_max = int(item.count.max * 3)
+        #     TealPrint.verbose(f"🔸 {item.id} min({item.count.min} -> {new_min}) max({item.count.max} -> {new_max})")
+        #     item.count.min = new_min
+        #     item.count.max = new_max
 
     def _item_pool_chromatic_steel_ingot(self) -> ItemPool:
         return ItemPool(
