@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 import subprocess
 import sys
+import os
 from typing import List, Optional
 
 from colored import fg
@@ -22,8 +23,15 @@ def main() -> None:
     if not extra or extra.run_default:
         run_make(sys.argv)
 
+def prepare(_: List[str]) -> None:
+    """Prepare the build environment"""
+    
+    # Set correct JAVA_HOME for dataflow
+    os.environ["JAVA_HOME"] = "/usr/lib/jvm/java-11-openjdk-amd64"
 
 def run_make(cmd: List[str], capture_output=False) -> str:
+    prepare(cmd)
+
     # Get platform dependent path/binary
     cmd[0] = "/usr/bin/make"
     result = subprocess.run(cmd, capture_output=capture_output)
