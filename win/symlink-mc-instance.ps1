@@ -1,4 +1,4 @@
-$instance_dir = "D:\\MultiMC\\instances"
+$instance_dir = "C:\\Users\\senth\\AppData\\Roaming\\PrismLauncher\\instances"
 $nextcloud_dir = "E:\\nextcloud\\Minecraft\\"
 
 Write-Host "Gathering data for symlink..."

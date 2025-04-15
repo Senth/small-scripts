@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/home/senth/.commands/pyro
 # A "Facade" in front of make for some additional features
 from __future__ import annotations
 
@@ -25,7 +25,7 @@ def main() -> None:
 
 def prepare(_: List[str]) -> None:
     """Prepare the build environment"""
-    
+
     # Set correct JAVA_HOME for dataflow
     os.environ["JAVA_HOME"] = "/usr/lib/jvm/java-11-openjdk-amd64"
 

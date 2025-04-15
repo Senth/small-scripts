@@ -1,0 +1,8 @@
+#!/bin/bash
+
+if [ -z "$1" ]; then
+	echo "Usage: $0 <version>"
+	exit 1
+fi
+
+go get -u "github.com/ingka-group-digital/rrm-cia-golib/v5@$1"

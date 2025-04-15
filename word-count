@@ -1,0 +1,62 @@
+#!/usr/bin/python3
+
+from pathlib import Path
+from collections import Counter
+import re
+
+
+include_extensions = [
+    ".go",
+    ".ts",
+    ".tsx",
+    ".py",
+    ".txt",
+    ".md",
+    ".json",
+    ".yml",
+    ".yaml",
+]
+exclude_dirs = [
+    "node_modules",
+    ".next",
+    ".git",
+    "vendor",
+    "dist",
+    "build",
+    "out",
+    "target",
+    "testdata",
+]
+
+
+def count_words_in_file(filepath) -> Counter:
+    with open(filepath, "r", encoding="utf-8", errors="ignore") as file:
+        text = file.read()
+
+        # Split CamelCase words
+        text = re.sub(r"([A-Z])", r" \1", text)
+
+        # Normalie any non-alphanumeric characters to spaces
+        words = [word.lower() for word in re.split(r"\W+", text) if len(word) > 2]
+        return Counter(words)
+
+
+def count_words_in_directory(directory: Path) -> Counter:
+    word_counts = Counter()
+    for path in directory.rglob("*"):
+        if path.suffix in include_extensions and not any(
+            exclude_dir in str(path) for exclude_dir in exclude_dirs
+        ):
+            word_counts += count_words_in_file(path)
+    return word_counts
+
+
+def main():
+    word_counts = count_words_in_directory(Path.cwd())
+
+    for word, count in word_counts.most_common(100):
+        print(f"{count}: {word}")
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,51 @@
+#!/bin/bash
+
+# Requires a repo name
+if [ $# -eq 0 ]; then
+	echo "No repo name provided"
+	return
+elif [ $# -gt 2 ]; then
+	echo "Too many args"
+	return
+fi
+
+open_nvim=true
+
+if [ $# -eq 1 ]; then
+	REPO_NAME="$1"
+elif [ $# -eq 2 ]; then
+	REPO_NAME="$2"
+	if [ "$1" = "--goto" ]; then
+		open_nvim=false
+	fi
+fi
+
+# If work computer, check the work git diretory
+if [[ "$COMPUTER" = *work ]]; then
+	GIT_DIR=~/git/ingka
+	repo_dir="$GIT_DIR/$REPO_NAME"
+
+	# Check out the repo if it doesn't exist
+	if [ ! -d "$repo_dir" ]; then
+		ingka-clone "$REPO_NAME"
+	fi
+else
+	GIT_DIR=~/git
+	repo_dir="$GIT_DIR/$REPO_NAME"
+
+	# Check out the repo if it doesn't exist
+	if [ ! -d "$repo_dir" ]; then
+		github-clone "$REPO_NAME"
+	fi
+fi
+
+if [ "$OS" = "linux" ]; then
+	wezterm cli set-tab-title "$REPO_NAME"
+fi
+
+# CWD to the repo and open it in Neovim
+cd "$repo_dir" || return
+
+if [ "$open_nvim" = true ]; then
+	nvim
+fi

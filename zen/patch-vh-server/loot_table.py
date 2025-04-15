@@ -42,7 +42,9 @@ class LootTablePatch(Patch):
             new_min = int(entry.roll.min * 1.5)
             new_max = int(entry.roll.max * 1.5)
 
-            TealPrint.verbose(f"🔸 {file_name}: roll({entry.roll.min} -> {new_min}, {entry.roll.max} -> {new_max})")
+            TealPrint.verbose(
+                f"🔸 {file_name}: roll({entry.roll.min} -> {new_min}, {entry.roll.max} -> {new_max})"
+            )
 
             entry.roll.min = new_min
             entry.roll.max = new_max
@@ -75,9 +77,15 @@ class LootTablePatch(Patch):
             # Add fundamental fundamental focus to level 27
             if level >= 27 and outer_pool.weight == 8:
                 item_pool = self._item_pool_fundamental_focus()
-                count = item_pool.item.count if item_pool.item is not None else Count("uniform", 0, 0)
+                count = (
+                    item_pool.item.count
+                    if item_pool.item is not None
+                    else Count("uniform", 0, 0)
+                )
                 outer_pool.pool.append(item_pool)
-                TealPrint.verbose(f"➕ the_vault:fundamental_focus min({count.min}) max({count.max})")
+                TealPrint.verbose(
+                    f"➕ the_vault:fundamental_focus min({count.min}) max({count.max})"
+                )
 
     def _patch_item(self, file_name: str, item_pool: ItemPool, item: Item) -> None:
         if item.id == "the_vault:carbon_nugget":
@@ -87,7 +95,9 @@ class LootTablePatch(Patch):
                 new_min = int(item.count.min * 1.5)
                 new_max = int(item.count.max * 1.5)
 
-            TealPrint.verbose(f"🔸 {item.id} min({item.count.min} -> {new_min}) max({item.count.max} -> {new_max})")
+            TealPrint.verbose(
+                f"🔸 {item.id} {item.count.min}-{item.count.max} -> {new_min}-{new_max}"
+            )
             item.count.min = new_min
             item.count.max = new_max
 

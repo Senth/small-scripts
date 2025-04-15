@@ -10,24 +10,29 @@ from .ftbbackup import FtbBackup
 
 # from .crystal import Crystal
 from .loot_table import LootTablePatch
-from .ore import Ore
+from .recycler import Recycler
+
+# from .ore import Ore
 from .patch import Patch
 
 patches: List[Patch] = [
     LootTablePatch(),
     # Crystal(),
     # Ore(),
+    Recycler(),
     FtbBackup(),
 ]
 
+
 def main():
     parser = ArgumentParser()
-    parser.add_argument("dir", help="The directory with all the configuration files to patch")
-    
+    parser.add_argument(
+        "dir", help="The directory with all the configuration files to patch"
+    )
+
     args = parser.parse_args()
     os.chdir(args.dir)
 
-    
     TealConfig.level = TealLevel.verbose
 
     # Copy files to server if needed

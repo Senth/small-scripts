@@ -1,0 +1,601 @@
+#!/home/senth/.commands/pyro
+
+from dataclasses import dataclass
+from typing import List
+from enum import Enum
+
+from colored.colored import sys
+from jinja2 import Template
+import colored
+
+
+class KeyType(Enum):
+    NORMAL = 1
+    PROGRAMMING = 2
+    EXTRA = 3
+
+
+@dataclass
+class Macro:
+    id: str
+    keys: List[str]
+
+
+@dataclass
+class Combo:
+    id: str
+    keys: List[int]
+
+
+@dataclass
+class KeyMapping:
+    keys: str
+    word: str
+    mod2: str = ""
+    mod3: str = ""
+    key_type: KeyType = KeyType.NORMAL
+
+    @property
+    def combos(self) -> List[Combo]:
+        all: List[Combo] = []
+        # word
+        if self.key_type == KeyType.NORMAL:
+            keys = [key_positions[key] for key in self.keys]
+            keys.insert(0, key_positions["norm"])
+            all.append(Combo(f"{self.id}_norm", keys))
+            keys = [key_positions[key] for key in self.keys]
+            keys.insert(0, key_positions["normS"])
+            all.append(Combo(f"{self.id}_normS", keys))
+        elif self.key_type == KeyType.PROGRAMMING:
+            keys = [key_positions[key] for key in self.keys]
+            keys.insert(0, key_positions["prog"])
+            all.append(Combo(f"{self.id}_prog", keys))
+        elif self.key_type == KeyType.EXTRA:
+            print("EXTRA functionality not implemented")
+            sys.exit(1)
+
+        # mod2
+        if self.mod2:
+            if self.key_type == KeyType.NORMAL:
+                keys = [key_positions[key] for key in self.keys]
+                keys.insert(0, key_positions["norm2"])
+                all.append(Combo(f"{self.id}_norm2", keys))
+                keys = [key_positions[key] for key in self.keys]
+                keys.insert(0, key_positions["norm2S"])
+                all.append(Combo(f"{self.id}_norm2S", keys))
+            elif self.key_type == KeyType.PROGRAMMING:
+                keys = [key_positions[key] for key in self.keys]
+                keys.insert(0, key_positions["prog2"])
+                all.append(Combo(f"{self.id}_prog2", keys))
+            elif self.key_type == KeyType.EXTRA:
+                print("EXTRA functionality not implemented")
+                sys.exit(1)
+
+        # mod3
+        if self.mod3:
+            if self.key_type == KeyType.NORMAL:
+                keys = [key_positions[key] for key in self.keys]
+                keys.insert(0, key_positions["norm3"])
+                all.append(Combo(f"{self.id}_norm3", keys))
+                keys = [key_positions[key] for key in self.keys]
+                keys.insert(0, key_positions["norm3S"])
+                all.append(Combo(f"{self.id}_norm3S", keys))
+            elif self.key_type == KeyType.PROGRAMMING:
+                print("PROGRAMMING mod3 functionality not supported")
+                sys.exit(1)
+            elif self.key_type == KeyType.EXTRA:
+                print("EXTRA functionality not implemented")
+                sys.exit(1)
+
+        return all
+
+    @property
+    def id(self) -> str:
+        id = (
+            self.word.replace(" ", "_")
+            .replace("-", "_")
+            .replace("å", "a")
+            .replace("ä", "a")
+            .replace("ö", "o")
+            .replace("'", "_")
+        )
+
+        # Use the first and last letters of the word to create a short name
+        if len(id) > 12:
+            return f"{id[:6]}{id[-6:]}"
+        return id
+
+    def _kps(self, word: str, prefix: str, capitalize=False) -> Macro:
+        kps = []
+
+        for key in word:
+            if capitalize:
+                key = key.upper()
+                capitalize = False
+
+            # åäö
+            if key == "å":
+                kps.append("LBKT")
+            elif key == "ä":
+                kps.append("SQT")
+            elif key == "ö":
+                kps.append("SEMI")
+            elif key == "'":
+                kps.append("BSLH")
+            elif key.isupper():
+                kps.append(f"RS({key})")
+            # Normal letters
+            else:
+                kps.append(key.upper())
+        return Macro(f"{self.id}_{prefix}", kps)
+
+    @property
+    def macros(self) -> List[Macro]:
+        """Return all the combos variants for all the words"""
+        all: List[Macro] = []
+
+        # word
+        if self.key_type == KeyType.NORMAL:
+            all.append(self._kps(self.word, "norm"))
+            all.append(self._kps(self.word, "normS", capitalize=True))
+        elif self.key_type == KeyType.PROGRAMMING:
+            all.append(self._kps(self.word, "prog"))
+        elif self.key_type == KeyType.EXTRA:
+            print("EXTRA functionality not implemented")
+            sys.exit(1)
+
+        # mod2
+        if self.mod2:
+            if self.key_type == KeyType.NORMAL:
+                all.append(self._kps(self.mod2, "norm2"))
+                all.append(self._kps(self.mod2, "norm2S", capitalize=True))
+            elif self.key_type == KeyType.PROGRAMMING:
+                all.append(self._kps(self.mod2, "prog2"))
+            elif self.key_type == KeyType.EXTRA:
+                print("EXTRA functionality not implemented")
+                sys.exit(1)
+
+        # mod3
+        if self.mod3:
+            if self.key_type == KeyType.NORMAL:
+                all.append(self._kps(self.mod3, "norm3"))
+                all.append(self._kps(self.mod3, "norm3S", capitalize=True))
+            elif self.key_type == KeyType.PROGRAMMING:
+                print("PROGRAMMING mod3 functionality not supported")
+                sys.exit(1)
+            elif self.key_type == KeyType.EXTRA:
+                print("EXTRA functionality not implemented")
+                sys.exit(1)
+
+        return all
+
+
+mappings: List[KeyMapping] = [
+    KeyMapping(",vy", "availability", "availabilities"),
+    KeyMapping(",ve", "available"),
+    KeyMapping("fn", "function", key_type=KeyType.PROGRAMMING),
+    KeyMapping("fr", "from"),
+    KeyMapping("yo", "you", "your", "you're"),
+    KeyMapping("kn", "kanske"),
+    KeyMapping("e/", "eller"),
+    # 2
+    KeyMapping("rt", "return", "returns", key_type=KeyType.PROGRAMMING),
+    KeyMapping("cg", "config", "configs", key_type=KeyType.PROGRAMMING),
+    KeyMapping("cn", "const", key_type=KeyType.PROGRAMMING),
+    KeyMapping("bo", "bool", "boolean", key_type=KeyType.PROGRAMMING),
+    KeyMapping("jn", "JSON", key_type=KeyType.PROGRAMMING),
+    KeyMapping("js", "JavaScript", key_type=KeyType.PROGRAMMING),
+    KeyMapping("ts", "TypeScript", key_type=KeyType.PROGRAMMING),
+    KeyMapping("rc", "receive", "receiving", "received"),
+    # 3
+    KeyMapping("hw", "however"),
+    KeyMapping("@k", "skulle"),
+    KeyMapping("pe", "person", "people"),
+    KeyMapping("ei", "energi", "energier"),
+    KeyMapping("ey", "energy", "energies"),
+    KeyMapping("oc", "och", "också"),
+    KeyMapping("ngt", "något", "någon"),
+    KeyMapping("mk", "mycket"),
+    KeyMapping("vi", "vill"),
+    KeyMapping("tie", "timestamp", "timestamps", key_type=KeyType.PROGRAMMING),
+    # 4
+    KeyMapping("met", "method", "methods"),
+    KeyMapping("ne", "none"),
+    KeyMapping("req", "request", "requests"),
+    KeyMapping("re@", "response", "responses"),
+    # 5
+]
+
+
+def generate_zmk_config() -> None:
+    template = Template(template_str)
+    rendered = template.render(
+        mappings=mappings,
+        behaviors=behaviors,
+        extra_macros=extra_macros,
+        extra_combos=extra_combos,
+        key_positions=key_positions,
+    )
+    print(rendered)
+
+
+def print_practice_words() -> None:
+    words = []
+    for mapping in mappings:
+        words.append(mapping.word)
+        if mapping.key_type == KeyType.NORMAL:
+            words.append(mapping.word.title())
+        if mapping.mod2:
+            words.append(mapping.mod2)
+            if mapping.key_type == KeyType.NORMAL:
+                words.append(mapping.mod2.title())
+        if mapping.mod3:
+            words.append(mapping.mod3)
+            if mapping.key_type == KeyType.NORMAL:
+                words.append(mapping.mod3.title())
+    print(" ".join(words))
+
+
+def validate_no_duplicate() -> None:
+    # TODO: Use different sets for different key types
+    keys = set()
+    words = set()
+    for mapping in mappings:
+        sorted_keys = "".join(sorted(mapping.keys))
+        if sorted_keys in keys:
+            print(f"Duplicate key: {mapping.keys}: {mapping.word}")
+            sys.exit(1)
+        keys.add(sorted_keys)
+        if mapping.word in words:
+            print(f"Duplicate word: {mapping.word}")
+            sys.exit(1)
+        words.add(mapping.word)
+
+
+template_str = """
+combos {
+    compatible = "zmk,combos";
+{%- for mapping in mappings %}
+    /* {{ mapping.word ~ ", " ~ mapping.mod2 ~ ", " ~ mapping.mod3 }} */
+    {%- for combo in mapping.combos %}
+    combo_{{ combo.id }} {
+        timeout-ms = <50>;
+        key-positions = <{% for key in combo.keys %} {{ key }}{% endfor %}>; /* {{ mapping.keys }} */
+        bindings = <&m_{{ combo.id }}>;
+    };
+    {%- endfor %}
+{% endfor -%}
+    {{ extra_combos }}
+};
+macros {
+{%- for mapping in mappings %}
+    /* {{ mapping.word ~ ", " ~ mapping.mod2 ~ ", " ~ mapping.mod3 }} */
+    {%- for macro in mapping.macros %}
+    m_{{ macro.id }}: m_{{ macro.id }} {
+        compatible = "zmk,behavior-macro";
+        #binding-cells = <0>;
+        wait-ms = <5>;
+        tap-ms = <5>;
+        bindings = <&macro_tap{% for key in macro.keys %} &kp {{ key }}{% endfor %}>;
+    };
+    {%- endfor %}
+{% endfor %}
+    {{ extra_macros }}
+};
+{{ behaviors }}
+"""
+
+key_positions = {
+    "norm3S": 23,  # ?
+    ",": 24,
+    ".": 26,
+    "p": 26,
+    "y": 27,
+    "f": 28,
+    "g": 29,
+    "c": 30,
+    "r": 31,
+    "l": 32,
+    "norm3": 32,  # l
+    "a": 35,
+    "normS": 35,  # a
+    "o": 36,
+    "e": 37,
+    "u": 38,
+    "i": 39,
+    "d": 40,
+    "h": 41,
+    "t": 42,
+    "n": 43,
+    "s": 44,
+    "norm": 44,  # s
+    "-": 45,
+    "norm2S": 47,  # "
+    "q": 48,
+    "j": 49,
+    "k": 50,
+    "x": 51,
+    "prog2": 56,  # Shift+Enter
+    "b": 58,
+    "m": 59,
+    "w": 60,
+    "v": 61,
+    "z": 62,
+    "norm2": 62,  # z
+    "å": 66,
+    "ä": 67,
+    "ö": 68,
+    "prog": 73,  # linux
+    "/": 75,
+    "@": 76,
+}
+
+behaviors = """
+behaviors {
+    hm: homerow_mods {
+        compatible = "zmk,behavior-hold-tap";
+        #binding-cells = <2>;
+        flavor = "tap-preferred";
+        tapping-term-ms = <250>;
+        require-prior-idle-ms = <400>;
+        bindings = <&kp>, <&kp>;
+    };
+    lt2: layer_tap2 {
+        compatible = "zmk,behavior-hold-tap";
+        #binding-cells = <2>;
+        flavor = "balanced";
+        tapping-term-ms = <200>;
+        bindings = <&mo>, <&kp>;
+    };
+    mt2: mod_tap2 {
+        compatible = "zmk,behavior-hold-tap";
+        #binding-cells = <2>;
+        flavor = "balanced";
+        tapping-term-ms = <200>;
+        bindings = <&kp>, <&kp>;
+    };
+    sl2: sticky_layer2 {
+        compatible = "zmk,behavior-hold-tap";
+        #binding-cells = <2>;
+        flavor = "balanced";
+        tapping-term-ms = <200>;
+        bindings = <&mo>, <&sl>;
+    };
+};
+"""
+
+extra_combos = """
+    /* Ctrl + Backspace */
+    combo_ctrl_backspace {
+        timeout-ms = <50>;
+        key-positions = <70 57>;
+        bindings = <&kp LC(BKSP)>;
+    };
+"""
+
+extra_macros = """
+/* ` */
+    m_backtick: m_backtick {
+        compatible = "zmk,behavior-macro";
+        #binding-cells = <0>;
+        wait-ms = <5>;
+        tap-ms = <5>;
+        bindings
+            = <&macro_press     &kp LEFT_SHIFT>
+            , <&macro_tap       &kp EQUAL &kp SPACE>
+            , <&macro_release   &kp LEFT_SHIFT>;
+    };
+    /* ~ */
+    m_tilde: m_tilde {
+        compatible = "zmk,behavior-macro";
+        #binding-cells = <0>;
+        wait-ms = <5>;
+        tap-ms = <5>;
+        bindings
+            = <&macro_press     &kp RIGHT_ALT>
+            , <&macro_tap       &kp RBKT>
+            , <&macro_release   &kp RIGHT_ALT>
+            , <&macro_tap       &kp SPACE>;
+    };
+    /* ^ */
+    m_hat: m_hat {
+        compatible = "zmk,behavior-macro";
+        #binding-cells = <0>;
+        wait-ms = <5>;
+        tap-ms = <5>;
+        bindings
+            = <&macro_press     &kp LEFT_SHIFT>
+            , <&macro_tap       &kp RBKT &kp SPACE>
+            , <&macro_release   &kp LEFT_SHIFT>;
+    };
+    /* === */
+    m_js_equal: m_js_equal {
+        compatible = "zmk,behavior-macro";
+        #binding-cells = <0>;
+        wait-ms = <5>;
+        tap-ms = <5>;
+        bindings
+            = <&macro_tap       &kp SPACE>
+            , <&macro_press     &kp LEFT_SHIFT>
+            , <&macro_tap       &kp N0 &kp N0 &kp N0>
+            , <&macro_release   &kp LEFT_SHIFT>
+            , <&macro_tap       &kp SPACE>;
+    };
+    /* !== */
+    m_js_not_equal: m_js_not_equal {
+        compatible = "zmk,behavior-macro";
+        #binding-cells = <0>;
+        wait-ms = <5>;
+        tap-ms = <5>;
+        bindings
+            = <&macro_tap       &kp SPACE>
+            , <&macro_press     &kp LEFT_SHIFT>
+            , <&macro_tap       &kp N1 &kp N0 &kp N0>
+            , <&macro_release   &kp LEFT_SHIFT>
+            , <&macro_tap       &kp SPACE>;
+    };
+    /* == */
+    m_equal: m_equal {
+        compatible = "zmk,behavior-macro";
+        #binding-cells = <0>;
+        wait-ms = <5>;
+        tap-ms = <5>;
+        bindings
+            = <&macro_tap       &kp SPACE>
+            , <&macro_press     &kp LEFT_SHIFT>
+            , <&macro_tap       &kp N0 &kp N0>
+            , <&macro_release   &kp LEFT_SHIFT>
+            , <&macro_tap       &kp SPACE>;
+    };
+    /* != */
+    m_not_equal: m_not_equal {
+        compatible = "zmk,behavior-macro";
+        #binding-cells = <0>;
+        wait-ms = <5>;
+        tap-ms = <5>;
+        bindings
+            = <&macro_tap       &kp SPACE>
+            , <&macro_press     &kp LEFT_SHIFT>
+            , <&macro_tap       &kp N1 &kp N0>
+            , <&macro_release   &kp LEFT_SHIFT>
+            , <&macro_tap       &kp SPACE>;
+    };
+    /* && */
+    m_and: m_and {
+        compatible = "zmk,behavior-macro";
+        #binding-cells = <0>;
+        wait-ms = <5>;
+        tap-ms = <5>;
+        bindings
+            = <&macro_tap       &kp SPACE>
+            , <&macro_press     &kp LEFT_SHIFT>
+            , <&macro_tap       &kp N6 &kp N6>
+            , <&macro_release   &kp LEFT_SHIFT>
+            , <&macro_tap       &kp SPACE>;
+    };
+    /* || */
+    m_or: m_or {
+        compatible = "zmk,behavior-macro";
+        #binding-cells = <0>;
+        wait-ms = <5>;
+        tap-ms = <5>;
+        bindings
+            = <&macro_tap       &kp SPACE>
+            , <&macro_press     &kp RIGHT_ALT>
+            , <&macro_tap       &kp NON_US_BSLH &kp NON_US_BSLH>
+            , <&macro_release   &kp RIGHT_ALT>
+            , <&macro_tap       &kp SPACE>;
+    };
+    /* := */
+    m_assign: m_assign {
+        compatible = "zmk,behavior-macro";
+        #binding-cells = <0>;
+        wait-ms = <5>;
+        tap-ms = <5>;
+        bindings
+            = <&macro_tap       &kp SPACE>
+            , <&macro_press     &kp LEFT_SHIFT>
+            , <&macro_tap       &kp DOT &kp N0>
+            , <&macro_release   &kp LEFT_SHIFT>
+            , <&macro_tap       &kp SPACE>;
+    };
+    /* <- */
+    m_arrow_left: m_arrow_left {
+        compatible = "zmk,behavior-macro";
+        #binding-cells = <0>;
+        wait-ms = <5>;
+        tap-ms = <5>;
+        bindings
+            = <&macro_tap       &kp SPACE>
+            , <&macro_tap       &kp NON_US_BSLH &kp FSLH>
+            , <&macro_tap       &kp SPACE>;
+    };
+    /* -> */
+    m_arrow_right: m_arrow_right {
+        compatible = "zmk,behavior-macro";
+        #binding-cells = <0>;
+        wait-ms = <5>;
+        tap-ms = <5>;
+        bindings
+            = <&macro_tap       &kp SPACE &kp FSLH>
+            , <&macro_press     &kp LEFT_SHIFT>
+            , <&macro_tap       &kp NON_US_BSLH>
+            , <&macro_release   &kp LEFT_SHIFT>
+            , <&macro_tap       &kp SPACE>;
+    };
+    /* => */
+    m_arrow_function: m_arrow_function {
+        compatible = "zmk,behavior-macro";
+        #binding-cells = <0>;
+        wait-ms = <5>;
+        tap-ms = <5>;
+        bindings
+            = <&macro_tap       &kp SPACE>
+            , <&macro_press     &kp LEFT_SHIFT>
+            , <&macro_tap       &kp N0 &kp NON_US_BSLH>
+            , <&macro_release   &kp LEFT_SHIFT>
+            , <&macro_tap       &kp SPACE>;
+    };
+    /* = */
+    m_equal_assign: m_equal_assign {
+        compatible = "zmk,behavior-macro";
+        #binding-cells = <0>;
+        wait-ms = <5>;
+        tap-ms = <5>;
+        bindings
+            = <&macro_tap       &kp SPACE>
+            , <&macro_press     &kp LEFT_SHIFT>
+            , <&macro_tap       &kp N0>
+            , <&macro_release   &kp LEFT_SHIFT>
+            , <&macro_tap       &kp SPACE>;
+    };
+    /* <= */
+    m_lte: m_lte {
+        compatible = "zmk,behavior-macro";
+        #binding-cells = <0>;
+        wait-ms = <5>;
+        tap-ms = <5>;
+        bindings
+            = <&macro_tap       &kp SPACE &kp NON_US_BSLH>
+            , <&macro_press     &kp LEFT_SHIFT>
+            , <&macro_tap       &kp N0>
+            , <&macro_release   &kp LEFT_SHIFT>
+            , <&macro_tap       &kp SPACE>;
+    };
+    /* >= */
+    m_gte: m_gte {
+        compatible = "zmk,behavior-macro";
+        #binding-cells = <0>;
+        wait-ms = <5>;
+        tap-ms = <5>;
+        bindings
+            = <&macro_tap       &kp SPACE>
+            , <&macro_press     &kp LEFT_SHIFT>
+            , <&macro_tap       &kp NON_US_BSLH &kp N0>
+            , <&macro_release   &kp LEFT_SHIFT>
+            , <&macro_tap       &kp SPACE>;
+    };
+    /* Sleep macro */
+    m_sleep: m_sleep {
+        compatible = "zmk,behavior-macro";
+        #binding-cells = <0>;
+        wait-ms = <5>;
+        tap-ms = <5>;
+        bindings
+            = <&macro_press     &kp LEFT_ALT>
+            , <&macro_tap       &kp SPACE>
+            , <&macro_release   &kp LEFT_ALT>
+            , <&macro_tap       &kp S &kp L &kp E &kp E &kp P &kp ENTER>;
+    };
+"""
+
+if __name__ == "__main__":
+    validate_no_duplicate()
+    print(
+        f"{colored.fg('cyan')}Copy from here\n--------------------------------------{colored.attr('reset')}"
+    )
+    generate_zmk_config()
+    print(
+        f"{colored.fg('cyan')}--------------------------------------\nCopy to here{colored.attr('reset')}"
+    )
+    print_practice_words()

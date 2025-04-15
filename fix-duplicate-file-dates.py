@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/home/senth/.commands/pyro
 import argparse
 from pathlib import Path
 import re
@@ -20,16 +20,16 @@ def fix_dir(dir: Path):
         if file.is_dir():
             fix_dir(file)
             continue
-                
+
         matches = re.match(regex, file.name)
         if matches:
             extra = matches.groups()
             new_name = file.name.replace(f" {extra[0]}", "")
             TealPrint.info(f"{file.name} -> {new_name}", color=colored.fg('green'))
-            
+
             if not args.dry_run:
                 file.rename(file.parent / new_name)
-    
+
     TealPrint.pop_indent()
 
 fix_dir(dir)

@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/home/senth/.commands/pyro
 
 import argparse
 import re
@@ -30,13 +30,13 @@ no_date_dir: Path | None = None
 if args.invalid_files_dir:
     dir = Path(args.invalid_files_dir)
     dir.mkdir(exist_ok=True)
-    
+
     invalid_dir = dir / "invalid format"
     invalid_dir.mkdir(exist_ok=True)
-    
+
     no_date_dir = dir / "no date"
     no_date_dir.mkdir(exist_ok=True)
-    
+
 
 
 exif_regex = r"(\d{4}).(\d{2}).(\d{2}) (\d{2}).(\d{2}).(\d{2})"
@@ -46,13 +46,13 @@ valid_extensions = [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".tif", ".
 def rename_exif(date_str: str) -> (str, datetime):
     matches = re.match(exif_regex, date_str)
     if matches:
-        
+
         year, month, day, hour, minute, second = matches.groups()
         date_str = f"{year}-{month}-{day} {hour}.{minute}.{second}"
-        
+
         # Convert to datetime
         date = datetime.strptime(date_str, "%Y-%m-%d %H.%M.%S")
-        
+
         return date_str, date
 
     return "", None
@@ -63,7 +63,7 @@ def rename_date_filename(file: Path) -> (str, datetime):
     matches = re.search(date_regex, file.stem)
     if matches:
         match_str = matches.group(0)
-        
+
         # Convert to datetime
         if len(match_str) == 19:
             _, year, month, day, hour, minute, second = matches.groups()
@@ -74,11 +74,11 @@ def rename_date_filename(file: Path) -> (str, datetime):
             date = datetime.strptime(day, "%Y%m%d")
         elif len(match_str) == 15:
             date = datetime.strptime(match_str, "%Y%m%d_%H%M%S")
-            
-        
+
+
         # Convert to the string format we want
         dateStr = date.strftime("%Y-%m-%d %H.%M.%S")
-        
+
         return dateStr, date
 
     return "", None
@@ -99,32 +99,32 @@ def generate_out_file(file: Path, full_name: str, date: datetime, out_dir: Path)
             full_name += f" {file.name}"
     else:
         full_name += f"{file.suffix}"
-        
+
     # Convert jpeg to jpg
     if full_name.lower().endswith(".jpeg"):
         full_name = full_name[:-4] + "jpg"
-        
+
     # Convert uppercase extensions to lowercase for all extensions
     # suffix = file.suffix.lower()
     # full_name = full_name[:-len(suffix)] + suffix
-        
+
     # Set the correct year folder
     if args.sort_by == "year" and not args.keep_structure:
         out_dir = out_dir.joinpath(str(date.year))
         out_dir.mkdir(exist_ok=True)
 
     return out_dir.joinpath(full_name)
-    
+
 def is_valid_file(file: Path) -> bool:
     if file.suffix.lower() in valid_extensions:
         return True
-    
+
     return False
 
 def copy_file(file: Path, out_name: Path):
     if not file.exists():
         return
-    
+
     if args.move:
         TealPrint.verbose(f"{file} -> {out_name}")
         if not args.dry_run:
@@ -141,30 +141,30 @@ def rename_files(in_dir: Path, out_dir: Path):
         # Directory
         if file.is_dir():
             TealPrint.info(f"{file}", color=colored.attr("bold"), push_indent=True)
-            
+
             next_out_dir = out_dir
             if args.keep_structure:
                 next_out_dir = out_dir.joinpath(file.name)
                 next_out_dir.mkdir(exist_ok=True)
-                
+
             rename_files(file, next_out_dir)
-            
+
             if args.move:
                 file.rmdir()
-                
+
             TealPrint.pop_indent()
             continue
-            
+
         # File
         if not is_valid_file(file):
             if file.suffix.lower() != ".xmp":
                 TealPrint.warning(f"Unspported extension: {file}")
                 copy_file(file, invalid_dir / file.name)
             continue
-        
+
         mtime = file.stat().st_mtime
         ctime = file.stat().st_ctime
-        
+
         if mtime < ctime:
             date = datetime.fromtimestamp(ctime)
         else:
@@ -185,16 +185,16 @@ def rename_files(in_dir: Path, out_dir: Path):
                     TealPrint.warning(f"No exif data: {file}")
                     copy_file(file, no_date_dir / file.name)
                     continue
-                    
+
         except Exception as e:
             TealPrint.warning(f"Error reading exif data: {file}, exception: {e}")
             copy_file(file, no_date_dir / file.name)
             pass
 
-        
+
         out_name = generate_out_file(file, full_name, date, out_dir)
         copy_file(file, out_name)
-        
+
         # Copy XMP file if it exists
         copy_file(file.with_suffix(".xmp"), out_name.with_suffix(".xmp"))
         copy_file(file.with_suffix(".XMP"), out_name.with_suffix(".xmp"))

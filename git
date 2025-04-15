@@ -35,14 +35,18 @@ def create_extensions() -> List[Extension]:
         CheckoutRemote(),
         Clone(),
         CommitAll(),
+        CommitAllPush(),
         Drop(),
         Hook(),
+        IgnoreTodo(),
+        LatestCommit(),
         Main(),
         Merge(),
         PruneLocalBranches(),
         Push(),
         Rebase(),
         Release(),
+        Worktree(),
     ]
     return extensions
 
@@ -61,9 +65,9 @@ def run_git(cmd: List[str], capture_output=False, cwd: Optional[str] = None) -> 
     elif sys.platform == "linux":
         cmd[0] = "/usr/bin/git"
     elif sys.platform == "darwin":
-        cmd[
-            0
-        ] = "/usr/bin/git"  # Might be a different path for you? I don't have OSX ;)
+        cmd[0] = (
+            "/usr/bin/git"  # Might be a different path for you? I don't have OSX ;)
+        )
 
     result = subprocess.run(cmd, capture_output=capture_output, cwd=cwd)
     if result:
@@ -102,6 +106,13 @@ def get_user_confirmation(prompt: str, default: bool) -> bool:
             return valid_responses[user_input]
         else:
             print("Invalid input. Please enter 'Y' or 'N'.")
+
+
+def find_first_non_option(cmd: List[str], start: int) -> int:
+    for i in range(start, len(cmd)):
+        if not cmd[i].startswith("-"):
+            return i
+    return -1
 
 
 class Extension:
@@ -183,20 +194,13 @@ class Clone(Extension):
 
     def post(self, cmd: List[str]) -> None:
         # Get the repository url from the command
-        url = cmd[2]
-        repo_name = ""
+        url, repo_name = self.find_repo_url_and_name(cmd)
 
-        # Repository name specified as last argument
-        if len(cmd) > 3:
-            repo_name = cmd[3]
-        # Repository name specified in url
-        else:
-            match = self.repo_regex.search(url)
-            if match:
-                repo_name = match.group(1).removesuffix(".git")
-            else:
-                return
+        # If a personal repository, set the user name and email
+        if os.getcwd().startswith("/home/senth/git/"):
+            self.set_username_and_email(repo_name, url)
 
+    def set_username_and_email(self, repo_name: str, url: str) -> None:
         if re.search(Clone.work_repo, url):
             run_git(["git", "config", "user.name", "Matteus Magnusson"], cwd=repo_name)
             run_git(
@@ -211,6 +215,28 @@ class Clone(Extension):
                 cwd=repo_name,
             )
             run_git(["git", "config", "core.autcrlf", "input"], cwd=repo_name)
+
+    def find_repo_url_and_name(self, cmd: List[str]) -> tuple[str, str]:
+        url = ""
+        name = ""
+        for arg in cmd:
+            if arg.startswith("http") or arg.endswith(".git"):
+                url = arg
+            # Name should always be after the url, if specified
+            elif url != "":
+                name = arg
+                break
+
+        if url == "":
+            print(f"No repository url found for {cmd}")
+            sys.exit(1)
+
+        if name == "":
+            match = Clone.repo_regex.search(url)
+            if match:
+                name = match.group(1).removesuffix(".git")
+
+        return url, name
 
 
 class CommitAll(Extension):
@@ -229,6 +255,29 @@ class CommitAll(Extension):
         # Commit all files
         cmd = ["git", "commit", "-m"]
         cmd.extend(cmdExt)
+        run_git(cmd)
+
+
+class CommitAllPush(Extension):
+    def __init__(self) -> None:
+        super().__init__(["cap"], run_default=False)
+
+    def run(self, cmd: List[str]) -> None:
+        # Add all files to staging
+        run_git(["git", "add", "--all"])
+
+        # Remove first arguments (including optional -m)
+        cmdExt = cmd[2:]
+        if len(cmdExt) > 0 and cmdExt[0] == "-m":
+            cmdExt.pop(0)
+
+        # Commit all files
+        cmd = ["git", "commit", "-m"]
+        cmd.extend(cmdExt)
+        run_git(cmd)
+
+        # Push the changes
+        cmd = ["git", "push"]
         run_git(cmd)
 
 
@@ -311,6 +360,45 @@ class HookInfo:
         self.path = path
 
 
+class IgnoreTodo(Extension):
+    """Ignores the TODO.md and CHANGELOG.md files locally in this repository
+    by changing the .git/info/exclude file"""
+
+    exclude_file = Path(".git/info/exclude")
+
+    def __init__(self) -> None:
+        super().__init__(["ignore", "todo"], run_default=False)
+
+    def run(self, cmd: List[str]) -> None:
+        with open(IgnoreTodo.exclude_file, "a") as f:
+            f.write("TODO.md\n")
+            f.write("CHANGELOG.md\n")
+
+
+class LatestCommit(Extension):
+    """Get the latest commit hash, display it and copy it to the clipboard"""
+
+    def __init__(self) -> None:
+        super().__init__(["latest", "commit"], run_default=False)
+
+    def run(self, cmd: List[str]) -> None:
+        # Get the latest commit hash
+        out = run_git(["git", "rev-parse", "HEAD"], capture_output=True)
+        commit_hash = out.strip()
+
+        # Copy the commit hash to the clipboard
+        if sys.platform == "win32":
+            subprocess.run(["clip"], input=commit_hash)
+        elif sys.platform == "linux":
+            subprocess.run(
+                ["xclip", "-selection", "clipboard"], input=commit_hash.encode("utf-8")
+            )
+        elif sys.platform == "darwin":
+            subprocess.run(["pbcopy"], input=commit_hash)
+
+        print(f"Latest commit hash: {commit_hash}")
+
+
 class Main(Extension):
     """Checkout main branch and pull it"""
 
@@ -341,9 +429,12 @@ class Merge(Extension):
 
         current_branch = get_current_branch()
         self.stashed = git_stash()
-        run_git(["git", "checkout", target_branch])
-        run_git(["git", "pull"])
-        run_git(["git", "checkout", current_branch])
+
+        # Only update the target branch if it's main
+        if target_branch == "main":
+            run_git(["git", "checkout", target_branch])
+            run_git(["git", "pull"])
+            run_git(["git", "checkout", current_branch])
 
     def post(self, cmd: List[str]) -> None:
         if not self.stashed:
@@ -427,9 +518,12 @@ class Rebase(Extension):
 
         current_branch = get_current_branch()
         self.stashed = git_stash()
-        run_git(["git", "checkout", target_branch])
-        run_git(["git", "pull"])
-        run_git(["git", "checkout", current_branch])
+
+        # Only update the target branch if it's main
+        if target_branch == "main":
+            run_git(["git", "checkout", target_branch])
+            run_git(["git", "pull"])
+            run_git(["git", "checkout", current_branch])
 
     def post(self, cmd: List[str]) -> None:
         if not self.stashed:
@@ -556,6 +650,36 @@ class Version:
             other.minor,
             other.patch,
         )
+
+
+class Worktree(Extension):
+    """Automatically append ../${current_dir_name}-${worktree_name} when adding or removing a worktree"""
+
+    def __init__(self) -> None:
+        super().__init__(["worktree"], run_default=False)
+
+    def run(self, cmd: List[str]) -> None:
+        if len(cmd) <= 2:
+            run_git(cmd)
+            return
+
+        command = cmd[2]
+        if command != "add" and command != "remove":
+            run_git(cmd)
+            return
+
+        worktree_index = find_first_non_option(cmd, 3)
+        if worktree_index == -1:
+            run_git(cmd)
+            return
+
+        worktree_name = cmd[worktree_index]
+        current_dir = os.getcwd()
+        current_dir_name = os.path.basename(current_dir)
+        worktree_path = f"../{current_dir_name}-{worktree_name}"
+        cmd[worktree_index] = worktree_path
+
+        run_git(cmd)
 
 
 if __name__ == "__main__":

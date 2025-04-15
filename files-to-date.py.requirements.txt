@@ -1,0 +1,3 @@
+tealprint==0.3.0
+colored==1.4.4
+exif==1.6.1

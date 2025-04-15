@@ -2,12 +2,14 @@
 
 import os
 import shutil
-from tealprint import TealPrint
+import sys
 from pathlib import Path
+from time import sleep
+
+from colored import attr
 from paramiko import SSHClient
 from scp import SCPClient
-from colored import attr
-from time import sleep
+from tealprint import TealPrint
 
 in_dir = Path("/mnt/d/Curse/Minecraft/Instances/Vault-Hunters")
 temp_dir = Path("/tmp/vh-server")
@@ -34,13 +36,16 @@ excess_mods = [
 extra_mods = [
     "longerlogintimes*",
     "Dynmap*",
+    #    "Chunky*",
 ]
 
 # Create the temp dir
 temp_dir.mkdir(exist_ok=True)
 
-# Copy over the files
-TealPrint.info(f"📂 Copying files from {in_dir} ➡️ {temp_dir}", color=attr("bold"), push_indent=True)
+# Copy over the files to the temp dir
+TealPrint.info(
+    f"📂 Copying files from {in_dir} ➡️ {temp_dir}", color=attr("bold"), push_indent=True
+)
 for f in copy:
     if isinstance(f, str):
         f = (f, f)
@@ -72,7 +77,7 @@ os.system(f'python -m patch-vh-server "{temp_dir}"')
 
 
 # Remove excess mods
-TealPrint.info(f"🗑 Deleting excess mods", color=attr("bold"), push_indent=True)
+TealPrint.info("🗑 Deleting excess mods", color=attr("bold"), push_indent=True)
 mods_dir = Path(f"{temp_dir}/mods")
 for f in excess_mods:
     for mod in mods_dir.glob(f):
@@ -87,8 +92,13 @@ with SSHClient() as ssh:
     ssh.connect(hostname="senth.org", username="amp")
 
     TealPrint.info("\n📂 Copying files to server", color=attr("bold"), push_indent=True)
-    with SCPClient(ssh.get_transport()) as scp:
-        for f in copy:       
+    transport = ssh.get_transport()
+    if transport is None:
+        TealPrint.error("Could not connect to server", exit=True)
+        sys.exit(1)
+
+    with SCPClient(transport) as scp:
+        for f in copy:
             if not isinstance(f, str):
                 continue
 
@@ -99,7 +109,7 @@ with SSHClient() as ssh:
             if in_name.is_dir():
                 TealPrint.info(f"🔥 Deleting old dir {out_name}")
                 ssh.exec_command(f'rm -rf "{out_name}"')
-                
+
                 # Some extra sleep is needed for the config dir, as it takes longer time to delete
                 if in_name.name == "config":
                     sleep(4)
@@ -110,11 +120,11 @@ with SSHClient() as ssh:
                 ssh.exec_command(f'rm -f "{out_name}"')
 
             TealPrint.info(f"➕ Copying {in_name} ➡️ {out_name}")
-            scp.put(files=in_name, recursive=True, remote_path=out_name)
+            scp.put(files=in_name, recursive=True, remote_path=str(out_name))
     TealPrint.pop_indent()
 
     # Add extra mods
-    TealPrint.info(f"\n➕ Adding extra mods", color=attr("bold"), push_indent=True)
+    TealPrint.info("\n➕ Adding extra mods", color=attr("bold"), push_indent=True)
     for f in extra_mods:
         in_file = vh_nextcloud_dir / f
         out_dir = vh_server_dir / "mods"
