@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/home/senth/.commands/pyro
 
 import sys
 import time
