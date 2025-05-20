@@ -1,49 +1,50 @@
 #!/bin/bash
 
 if [[ $# == 0 ]]; then
-  echo "usage: $0 [win/linux] repo"
-  exit 1
+	echo "usage: $0 [win/linux] repo"
+	exit 1
 fi
 
 git_dir=~/git
 
 if [[ "$1" == "win" ]]; then
-  git_dir=~/git-win
-  shift
+	git_dir=~/git-win
+	shift
 elif [[ "$1" == "linux" ]]; then
-  git_dir=~/git-linux
-  shift
+	git_dir=~/git-linux
+	shift
 fi
 
 cd "$git_dir"
 
 # Use senth as a repository if only one parameter
 if [[ $# == 1 ]]; then
-  repo="git@github.com:Senth/$1.git"
-  repo_dir=$1
+	repo="git@github.com:Senth/$1.git"
+	repo_dir=$1
 elif [[ $# == 2 ]]; then
-  repo="git@github.com:$1/$2.git"
-  repo_dir=$2
+	repo="git@github.com:$1/$2.git"
+	repo_dir=$2
 fi
 
 # Repo has already been cloned
 if [ -d "$repo_dir" ]; then
-  echo "Repository has already been cloned"
-  cd "$repo_dir"
+	echo "Repository has already been cloned"
+	cd "$repo_dir"
 fi
 
 git clone "$repo"
 
 # Failed to clone
 if [[ $? != 0 ]]; then
-  exit $?
+	exit $?
 fi
 
 cd "$repo_dir"
 
 # Set is as a personal account on work computer
 if [[ "$COMPUTER" = *work ]]; then
-  git config user.name Senth
-  git config user.email senth.wallace@gmail.com
-  git config core.autocrlf input
+	git config user.name Senth
+	git config user.email senth.wallace@gmail.com
+	git config core.autocrlf input
+	git config user.signingkey /home/senth/.ssh/id_ed25519.pub
 fi

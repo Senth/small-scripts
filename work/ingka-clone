@@ -1,39 +1,39 @@
 #!/bin/bash
 
 if [[ $# == 0 ]]; then
-  echo "usage: $0 [win/linux] repo"
-  exit 1
+	echo "usage: $0 [win/linux] repo"
+	exit 1
 fi
 
 git_dir=~/git
 
 if [[ "$1" == "win" ]]; then
-  git_dir=~/git-win
-  shift
+	git_dir=~/git-win
+	shift
 elif [[ "$1" == "linux" ]]; then
-  git_dir=~/git-linux
-  shift
+	git_dir=~/git-linux
+	shift
 fi
 
 cd "$git_dir/ingka"
 
 # Use senth as a repository if only one parameter
 if [[ $# == 1 ]]; then
-  repo="git@github.com:ingka-group-digital/$1.git"
-  repo_dir=$1
+	repo="git@github.com:ingka-group-digital/$1.git"
+	repo_dir=$1
 fi
 
 # Repo has already been cloned
 if [ -d "$repo_dir" ]; then
-  echo "Repository has already been cloned"
-  exit 0
+	echo "Repository has already been cloned"
+	exit 0
 fi
 
 git clone "$repo"
 
 # Failed to clone
 if [[ $? != 0 ]]; then
-  exit $?
+	exit $?
 fi
 
 cd "$repo_dir"
@@ -42,3 +42,4 @@ cd "$repo_dir"
 git config user.name "Matteus Magnusson"
 git config user.email matteus.magnusson@ingka.com
 git config core.autocrlf input
+git config user.signingkey /home/senth/.ssh/ingka_ed25519.pub
