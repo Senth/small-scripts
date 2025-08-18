@@ -1,2 +1,2 @@
 #!/bin/bash
-docker run --user "$UID:$GID" --pull=always --rm -i -v "${HOME}:${HOME}" -v "${HOME}:/root" -w "${PWD}" hashicorp/terraform:latest $@
+docker run --user "$UID:$GID" --pull=always --rm -i -v "${HOME}:${HOME}" -v "${HOME}:/root" -w "${PWD}" -e "GOOGLE_APPLICATION_CREDENTIALS=${GOOGLE_APPLICATION_CREDENTIALS}" hashicorp/terraform:latest $@
