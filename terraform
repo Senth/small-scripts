@@ -1,2 +1,2 @@
 #!/bin/bash
-docker run --pull=always --rm -i -v "${HOME}:${HOME}" -v "${HOME}:/root" -w "${PWD}" hashicorp/terraform:latest $@
+docker run --user "$UID:$GID" --pull=always --rm -i -v "${HOME}:${HOME}" -v "${HOME}:/root" -w "${PWD}" hashicorp/terraform:latest $@

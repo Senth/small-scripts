@@ -20,7 +20,7 @@ if testing:
     break_time = 5
     minute = "*"
 
-skip_breaks = ["Slack | Slack call", "(Meeting) | Microsoft Teams", "screen share", "Huddle"]
+skip_breaks = ["Slack | Slack call", "Microsoft Teams", "screen share", "Huddle"]
 
 
 class MainWindow(QMainWindow):

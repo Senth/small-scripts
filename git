@@ -674,6 +674,12 @@ class Worktree(Extension):
             return
 
         worktree_name = cmd[worktree_index]
+
+        # Only add the path if it's not already there
+        if worktree_name.find("/") != -1:
+            run_git(cmd)
+            return
+
         current_dir = os.getcwd()
         current_dir_name = os.path.basename(current_dir)
         worktree_path = f"../{current_dir_name}-{worktree_name}"
