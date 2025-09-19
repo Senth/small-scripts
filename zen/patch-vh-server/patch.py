@@ -1,4 +1,5 @@
 import json
+import toml
 from pathlib import Path
 from typing import Any, Dict, List, TypeVar
 
@@ -11,7 +12,7 @@ K = TypeVar("K")
 
 class Patch:
     save_dir = Path("config")
-    load_dir = Path("config_unmodified")
+    load_dir = Path("config")
 
     def __init__(self, name: str):
         self.name = name
@@ -41,6 +42,17 @@ class Patch:
         with file.open() as f:
             json_dict = json.load(f)
             return Klass.from_dict(json_dict)
+
+    def save_toml(self, file: Path, object: Dict[str, Any]) -> None:
+        file = Patch.save_dir / file
+        with file.open("w") as f:
+            toml.dump(object, f)
+            TealPrint.info(f"💾 Saved {file.name}")
+
+    def load_toml(self, file: Path) -> Dict[str, Any]:
+        file = Patch.load_dir / file
+        with file.open() as f:
+            return toml.load(f)
 
     def save_json(self, file: Path, object: Dict[str, Any]) -> None:
         file = Patch.save_dir / file

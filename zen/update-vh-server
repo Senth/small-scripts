@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/home/senth/.commands/pyro
 
 import os
 import shutil
@@ -18,7 +18,7 @@ vh_nextcloud_dir = Path("/home/amp/nextcloud/server\\ files/VaultHunters\\ 1.18"
 
 copy = [
     "config",
-    ("config", "config_unmodified"),
+    # ("config", "config_unmodified"),
     "defaultconfigs",
     "mods",
     "packmenu",

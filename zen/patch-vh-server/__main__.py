@@ -6,11 +6,11 @@ from colored import attr
 from tealprint import TealConfig, TealLevel, TealPrint
 
 from .copy_to_server import copy_to_server, server_needs_update
-from .ftbbackup import FtbBackup
 
 # from .crystal import Crystal
 from .loot_table import LootTablePatch
 from .recycler import Recycler
+from .simple_backup import SimpleBackup
 
 # from .ore import Ore
 from .patch import Patch
@@ -20,7 +20,7 @@ patches: List[Patch] = [
     # Crystal(),
     # Ore(),
     Recycler(),
-    FtbBackup(),
+    SimpleBackup(),
 ]
 
 
